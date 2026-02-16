@@ -1,0 +1,40 @@
+const API_BASE = '/api';
+
+export interface ApiError {
+  error: string;
+}
+
+async function request<T>(
+  path: string,
+  options: RequestInit & { token?: string } = {}
+): Promise<T> {
+  const { token, ...fetchOptions } = options;
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(fetchOptions.headers as Record<string, string>),
+  };
+  if (token) {
+    (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+  }
+  const res = await fetch(`${API_BASE}${path}`, { ...fetchOptions, headers });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error((data as ApiError).error || res.statusText || 'Error en la petición');
+  }
+  return data as T;
+}
+
+export const api = {
+  get<T>(path: string, token?: string) {
+    return request<T>(path, { method: 'GET', token });
+  },
+  post<T>(path: string, body: unknown, token?: string) {
+    return request<T>(path, { method: 'POST', body: JSON.stringify(body), token });
+  },
+  patch<T>(path: string, body: unknown, token?: string) {
+    return request<T>(path, { method: 'PATCH', body: JSON.stringify(body), token });
+  },
+  delete<T>(path: string, token?: string) {
+    return request<T>(path, { method: 'DELETE', token });
+  },
+};

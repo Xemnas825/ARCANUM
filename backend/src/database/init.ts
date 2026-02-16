@@ -30,11 +30,35 @@ export async function initializeDatabase() {
         subclass_id VARCHAR(50),
         level INTEGER DEFAULT 1,
         experience INT DEFAULT 0,
+        background_id VARCHAR(50),
+        alignment_id VARCHAR(50),
+        personality_ideals TEXT,
+        personality_bonds TEXT,
+        personality_flaws TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
     console.log('✓ Tabla characters creada');
+
+    // Añadir columnas opcionales si la tabla ya existía sin ellas (para migraciones suaves)
+    await pool.query(`
+      ALTER TABLE characters ADD COLUMN IF NOT EXISTS background_id VARCHAR(50);
+      ALTER TABLE characters ADD COLUMN IF NOT EXISTS alignment_id VARCHAR(50);
+      ALTER TABLE characters ADD COLUMN IF NOT EXISTS personality_ideals TEXT;
+      ALTER TABLE characters ADD COLUMN IF NOT EXISTS personality_bonds TEXT;
+      ALTER TABLE characters ADD COLUMN IF NOT EXISTS personality_flaws TEXT;
+    `).catch(() => {});
+
+    // Tabla de competencias de skill por personaje (para ficha tipo D&D)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS character_skills (
+        character_id UUID NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+        skill_key VARCHAR(50) NOT NULL,
+        PRIMARY KEY (character_id, skill_key)
+      );
+    `);
+    console.log('✓ Tabla character_skills creada');
 
     // Tabla de habilidades
     await pool.query(`
@@ -71,15 +95,42 @@ export async function initializeDatabase() {
         spell_slots_level_7 INT DEFAULT 0,
         spell_slots_level_8 INT DEFAULT 0,
         spell_slots_level_9 INT DEFAULT 0,
+        concentrating_on TEXT,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
     console.log('✓ Tabla game_stats creada');
 
+    await pool.query(`ALTER TABLE game_stats ADD COLUMN IF NOT EXISTS concentrating_on TEXT;`).catch(() => {});
+
+    // Condiciones activas del personaje en partida (estados: envenenado, concentrando, etc.)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS character_conditions (
+        character_id UUID NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+        condition_id VARCHAR(50) NOT NULL,
+        PRIMARY KEY (character_id, condition_id)
+      );
+    `);
+    console.log('✓ Tabla character_conditions creada');
+
+    // Inventario del personaje (objetos y cantidad)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS character_inventory (
+        id UUID PRIMARY KEY,
+        character_id UUID NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        quantity INT NOT NULL DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('✓ Tabla character_inventory creada');
+
     // Índices para mejor rendimiento
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_characters_user_id ON characters(user_id);
       CREATE INDEX IF NOT EXISTS idx_game_stats_character_id ON game_stats(character_id);
+      CREATE INDEX IF NOT EXISTS idx_character_conditions_character_id ON character_conditions(character_id);
+      CREATE INDEX IF NOT EXISTS idx_character_inventory_character_id ON character_inventory(character_id);
     `);
     console.log('✓ Índices creados');
 

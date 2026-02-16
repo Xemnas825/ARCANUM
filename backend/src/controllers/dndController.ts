@@ -13,6 +13,16 @@ import {
   magicItems,
 } from '../data/dnd-data.js';
 
+// ===== OPCIONES PARA CREACIÓN DE PERSONAJE (una sola petición) =====
+export function getCharacterCreationOptions(req: Request, res: Response) {
+  res.json({
+    races,
+    classes,
+    backgrounds,
+    alignments,
+  });
+}
+
 // ===== OBTENER TODAS LAS RAZAS =====
 export function getAllRaces(req: Request, res: Response) {
   res.json(races);

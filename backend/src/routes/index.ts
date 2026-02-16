@@ -1,8 +1,17 @@
 import { Router } from 'express';
+import * as authController from '../controllers/authController.js';
 import * as characterController from '../controllers/characterController.js';
 import * as dndController from '../controllers/dndController.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
+
+// ===== AUTENTICACIÓN =====
+router.post('/auth/register', authController.register);
+router.post('/auth/login', authController.login);
+
+// ===== OPCIONES DE CREACIÓN DE PERSONAJE (público para que el formulario cargue sin estar logueado si se quiere) =====
+router.get('/character-creation-options', dndController.getCharacterCreationOptions);
 
 // ===== RUTAS DE RAZAS =====
 router.get('/races', dndController.getAllRaces);
@@ -50,11 +59,15 @@ router.get('/alignments/:id', dndController.getAlignmentById);
 router.get('/magic-items', dndController.getAllMagicItems);
 router.get('/magic-items/:id', dndController.getMagicItemById);
 
-// ===== RUTAS DE PERSONAJES =====
-router.post('/characters', characterController.createCharacter);
-router.get('/characters/:id', characterController.getCharacter);
-router.get('/users/:userId/characters', characterController.getUserCharacters);
-router.patch('/characters/:characterId/stats', characterController.updateGameStats);
-router.delete('/characters/:id', characterController.deleteCharacter);
+// ===== RUTAS DE PERSONAJES (protegidas con JWT) =====
+router.post('/characters', requireAuth, characterController.createCharacter);
+router.get('/characters/:id', requireAuth, characterController.getCharacter);
+router.get('/users/:userId/characters', requireAuth, characterController.getUserCharacters);
+router.patch('/characters/:characterId/stats', requireAuth, characterController.updateGameStats);
+router.put('/characters/:id/conditions', requireAuth, characterController.setCharacterConditions);
+router.post('/characters/:id/inventory', requireAuth, characterController.addInventoryItem);
+router.patch('/characters/:id/inventory/:itemId', requireAuth, characterController.updateInventoryItem);
+router.delete('/characters/:id/inventory/:itemId', requireAuth, characterController.deleteInventoryItem);
+router.delete('/characters/:id', requireAuth, characterController.deleteCharacter);
 
 export default router;

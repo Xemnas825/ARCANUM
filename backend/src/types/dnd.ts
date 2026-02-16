@@ -2,10 +2,10 @@ export interface Equipment {
   id: string;
   nameEs: string;
   nameEn: string;
-  type: 'weapon' | 'armor' | 'gear' | 'magic-item';
+  type: 'weapon' | 'armor' | 'gear' | 'magic-item' | 'consumable' | 'wondrous-item' | 'wand' | 'staff';
   rarity?: 'common' | 'uncommon' | 'rare' | 'very-rare' | 'legendary' | 'artifact';
   cost: string; // ej: "1 pd" (1 pieza de oro)
-  weight?: number; // en libras
+  weight?: number | string; // en libras (número o texto ej. "0.5 lb")
   descriptionEs: string;
   descriptionEn: string;
   properties?: string[];
@@ -87,6 +87,7 @@ export interface Monster {
   skills?: Record<string, number>;
   damageResistances?: string[];
   damageImmunities?: string[];
+  conditionImmunities?: string[];
   senses: string;
   languages?: string;
   challenge: string;
@@ -111,13 +112,16 @@ export interface Condition {
   nameEn: string;
   descriptionEs: string;
   descriptionEn: string;
+  effects?: string[];
 }
 
 export interface Alignment {
   id: string;
   nameEs: string;
   nameEn: string;
-  abbreviation: string;
+  abbreviation?: string;
   descriptionEs: string;
   descriptionEn: string;
+  moralAxis?: string;
+  ethicsAxis?: string;
 }

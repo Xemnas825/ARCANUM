@@ -3,6 +3,18 @@ import { Armor } from '../types/dnd.js';
 export const armor: Armor[] = [
   // ===== LIGERA =====
   {
+    id: 'padded',
+    nameEs: 'Acolchada',
+    nameEn: 'Padded Armor',
+    type: 'armor',
+    cost: '5 po',
+    weight: 8,
+    ac: 11,
+    stealthDisadvantage: true,
+    descriptionEs: 'Armadura de tela acolchada y relleno.',
+    descriptionEn: 'Padded and quilted cloth armor.',
+  },
+  {
     id: 'leather',
     nameEs: 'Cuero',
     nameEn: 'Leather',
@@ -88,8 +100,33 @@ export const armor: Armor[] = [
     descriptionEs: 'Armadura de placas que cubre la mayoría del cuerpo.',
     descriptionEn: 'Plate armor that covers most of your body.',
   },
+  {
+    id: 'ring-mail',
+    nameEs: 'Cota de Anillas',
+    nameEn: 'Ring Mail',
+    type: 'armor',
+    cost: '30 po',
+    weight: 40,
+    ac: 14,
+    stealthDisadvantage: true,
+    descriptionEs: 'Armadura de anillas de metal cosidas sobre cuero.',
+    descriptionEn: 'Armor made of metal rings sewn onto leather.',
+  },
   
   // ===== PESADA =====
+  {
+    id: 'splint',
+    nameEs: 'Laminada',
+    nameEn: 'Splint Armor',
+    type: 'armor',
+    cost: '200 po',
+    weight: 60,
+    ac: 17,
+    strengthRequirement: 15,
+    stealthDisadvantage: true,
+    descriptionEs: 'Armadura de tiras verticales de metal sobre cuero acolchado.',
+    descriptionEn: 'Armor made of narrow vertical strips of metal riveted to a leather backing.',
+  },
   {
     id: 'plate',
     nameEs: 'Armadura de Placas',
