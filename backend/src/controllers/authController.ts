@@ -69,15 +69,18 @@ export async function register(req: Request, res: Response) {
 export async function login(req: Request, res: Response) {
   try {
     const { email, password } = req.body as LoginBody;
+    const loginInput = email?.trim() ?? '';
 
-    if (!email?.trim() || !password) {
-      res.status(400).json({ error: 'Email y contraseña son obligatorios' });
+    if (!loginInput || !password) {
+      res.status(400).json({ error: 'Usuario/correo y contraseña son obligatorios' });
       return;
     }
 
+    // Aceptar usuario o correo: si contiene @ es correo, si no es usuario
+    const isEmail = loginInput.includes('@');
     const result = await pool.query(
-      `SELECT id, username, email, password FROM users WHERE email = $1`,
-      [email.trim().toLowerCase()]
+      `SELECT id, username, email, password FROM users WHERE ${isEmail ? 'LOWER(email) = LOWER($1)' : 'LOWER(username) = LOWER($1)'}`,
+      [loginInput]
     );
 
     if (result.rows.length === 0) {

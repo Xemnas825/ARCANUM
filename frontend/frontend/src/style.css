@@ -1,77 +1,131 @@
+/* ===== ARCANUM — Tema pergamino y fantasía ===== */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  --font-title: 'Cinzel', serif;
+  --font-body: 'Crimson Text', Georgia, serif;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  --parchment: #f2e9d8;
+  --parchment-dark: #e5d9c2;
+  --parchment-shadow: #d4c4a8;
+  --ink: #2c1810;
+  --ink-muted: #4a3728;
+  --accent-gold: #b8860b;
+  --accent-gold-light: #d4a84b;
+  --accent-glow: rgba(184, 134, 11, 0.25);
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --bg-dark: #1a1510;
+  --bg-study: #221c16;
+  --bg-panel: linear-gradient(180deg, #f5ecd9 0%, #ebe0c8 50%, #e2d5bc 100%);
+  --border-parchment: #c9b896;
+  --border-gold: rgba(184, 134, 11, 0.5);
+
+  --shadow-paper: 0 2px 8px rgba(44, 24, 16, 0.15), 0 8px 24px rgba(0, 0, 0, 0.2);
+  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+* {
+  box-sizing: border-box;
 }
-a:hover {
-  color: #535bf2;
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-.card {
-  padding: 2em;
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: #2c1810;
+  /* Fondo claro tipo pergamino para que nunca se vea todo negro */
+  background: #e8dfd0;
+  background-image:
+    radial-gradient(ellipse 100% 60% at 50% 0%, rgba(184, 134, 11, 0.12) 0%, transparent 50%),
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L30 60M0 30L60 30' stroke='%23988f7a' stroke-opacity='0.15' stroke-width='0.5' fill='none'/%3E%3C/svg%3E");
 }
 
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  min-height: 100vh;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+/* Área principal de contenido: siempre fondo claro */
+main.main {
+  background-color: transparent;
+}
+.page {
+  background-color: #e8dfd0;
+}
+
+/* Paneles tipo pergamino: siempre visibles con color sólido de respaldo */
+.parchment-panel {
+  background: linear-gradient(180deg, #f5ecd9 0%, #ebe0c8 50%, #e2d5bc 100%);
+  background-color: #f0e6d4;
+  border: 1px solid #c9b896;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(44, 24, 16, 0.12), 0 8px 24px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  color: #2c1810;
+}
+
+/* Animaciones globales */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.animate-fade-in-scale {
+  animation: fadeInScale 0.4s ease forwards;
+}
+
+/* Títulos con estilo fantasía */
+h1, h2, .font-title {
+  font-family: var(--font-title);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #2c1810;
+}
+
+a {
+  color: var(--accent-gold);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+a:hover {
+  color: var(--accent-gold-light);
+}
+
+button {
+  font-family: var(--font-body);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+button:hover {
+  transform: translateY(-1px);
+}
+button:active {
+  transform: translateY(0);
+}
+
+input, select, textarea {
+  font-family: var(--font-body);
 }

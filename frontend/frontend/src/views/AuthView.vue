@@ -57,7 +57,8 @@ function toggleMode() {
 
 <template>
   <div class="auth">
-    <div class="auth-card">
+    <div class="auth-card parchment-panel animate-fade-in-scale">
+      <div class="auth-ornament">✦</div>
       <h1 class="title">ARCANUM</h1>
       <p class="subtitle">{{ title }}</p>
 
@@ -74,13 +75,13 @@ function toggleMode() {
           />
         </div>
         <div class="field">
-          <label for="email">Email</label>
+          <label for="email">{{ isRegister ? 'Email' : 'Usuario o correo' }}</label>
           <input
             id="email"
             v-model="email"
-            type="email"
-            autocomplete="email"
-            placeholder="tu@email.com"
+            :type="isRegister ? 'email' : 'text'"
+            :autocomplete="isRegister ? 'email' : 'username'"
+            :placeholder="isRegister ? 'tu@email.com' : 'Usuario o correo electrónico'"
             required
           />
         </div>
@@ -126,26 +127,37 @@ function toggleMode() {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: 1.5rem;
+  background-image: radial-gradient(ellipse 80% 50% at 50% 50%, rgba(184, 134, 11, 0.06) 0%, transparent 70%);
 }
 .auth-card {
   width: 100%;
-  max-width: 380px;
-  background: var(--card-bg, #1e1e2e);
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  border-radius: 6px;
+  padding: 2.25rem;
+  box-shadow: var(--shadow-paper), 0 20px 50px rgba(0, 0, 0, 0.25);
+  position: relative;
+}
+.auth-ornament {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: var(--accent-gold);
+  opacity: 0.5;
+  font-size: 1.1rem;
 }
 .title {
-  font-size: 1.75rem;
+  font-family: var(--font-title);
+  font-size: 1.9rem;
   margin: 0 0 0.25rem 0;
-  letter-spacing: 0.05em;
-  color: var(--accent, #c9a227);
+  letter-spacing: 0.2em;
+  color: var(--ink);
+  font-weight: 700;
 }
 .subtitle {
-  color: var(--text-muted, #888);
+  color: var(--ink-muted);
   margin: 0 0 1.5rem 0;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 .form {
   display: flex;
@@ -158,60 +170,76 @@ function toggleMode() {
   gap: 0.35rem;
 }
 .field label {
-  font-size: 0.85rem;
-  color: var(--text-muted, #888);
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+  font-weight: 600;
 }
 .field input {
-  padding: 0.65rem 0.85rem;
-  border: 1px solid var(--border, #333);
-  border-radius: 8px;
-  background: var(--input-bg, #252535);
-  color: var(--text, #e0e0e0);
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--border-parchment);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--ink);
   font-size: 1rem;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 .field input::placeholder {
-  color: #666;
+  color: var(--ink-muted);
+  opacity: 0.7;
 }
 .field input:focus {
   outline: none;
-  border-color: var(--accent, #c9a227);
+  border-color: var(--accent-gold);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 0 2px var(--accent-glow);
 }
 .error {
-  color: #e57373;
+  color: #b71c1c;
   font-size: 0.9rem;
   margin: 0;
+  padding: 0.5rem;
+  background: rgba(183, 28, 28, 0.08);
+  border-radius: 4px;
+  border: 1px solid rgba(183, 28, 28, 0.2);
 }
 .btn {
   padding: 0.75rem 1.25rem;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
+  font-family: var(--font-body);
+  border: 1px solid var(--parchment-shadow);
 }
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 .btn.primary {
-  background: var(--accent, #c9a227);
-  color: #1a1a1a;
+  background: linear-gradient(180deg, var(--accent-gold-light) 0%, var(--accent-gold) 100%);
+  color: var(--ink);
+  box-shadow: 0 2px 8px rgba(44, 24, 16, 0.2), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.btn.primary:hover:not(:disabled) {
+  box-shadow: 0 4px 14px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.3);
 }
 .toggle {
-  margin: 1.25rem 0 0 0;
+  margin: 1.5rem 0 0 0;
   text-align: center;
 }
 .link {
   background: none;
   border: none;
-  color: var(--link, #8ab4f8);
+  color: var(--accent-gold);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   padding: 0;
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
 .link:hover {
-  color: #a3c5f9;
+  color: var(--accent-gold-light);
 }
 </style>

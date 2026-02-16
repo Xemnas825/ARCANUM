@@ -1,11 +1,12 @@
 /**
- * Tabla de slots de hechizo por nivel (D&D 5e).
- * Índice 0 = nivel 1, índice 19 = nivel 20.
- * Cada fila: [nivel1, nivel2, ..., nivel9].
+ * Tabla de slots de hechizo por nivel (D&D 5e, full caster).
+ * Índice 0 = personaje nivel 1, índice 19 = nivel 20.
+ * Cada fila: [slots nivel 1, slots nivel 2, ..., slots nivel 9].
+ * Nivel 1: 2 slots de nivel 1. Nivel 2: 3 slots de nivel 1. Nivel 3: 4 de nivel 1, 2 de nivel 2, etc.
  */
 export const FULL_CASTER_SLOTS: number[][] = [
-  [2, 0, 0, 0, 0, 0, 0, 0, 0], // level 1
-  [3, 0, 0, 0, 0, 0, 0, 0, 0],
+  [2, 0, 0, 0, 0, 0, 0, 0, 0], // personaje nivel 1 → 2 slots nivel 1
+  [3, 0, 0, 0, 0, 0, 0, 0, 0], // personaje nivel 2 → 3 slots nivel 1
   [4, 2, 0, 0, 0, 0, 0, 0, 0],
   [4, 3, 0, 0, 0, 0, 0, 0, 0],
   [4, 3, 2, 0, 0, 0, 0, 0, 0],

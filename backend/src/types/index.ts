@@ -137,6 +137,16 @@ export interface CharacterGameStats {
 }
 
 // ===== REQUEST/RESPONSE TYPES =====
+/** Valores base de habilidad (antes de bonos de raza). 8–20 típico. */
+export interface AbilitiesInput {
+  strength?: number;
+  dexterity?: number;
+  constitution?: number;
+  intelligence?: number;
+  wisdom?: number;
+  charisma?: number;
+}
+
 export interface CreateCharacterRequest {
   nameEs: string;
   nameEn?: string;
@@ -148,12 +158,14 @@ export interface CreateCharacterRequest {
   alignmentId?: string;
   /** Claves de skills en las que es competente (elegidas de class.skillOptions). Máximo según clase. */
   skillProficiencies?: string[];
-  /** Personalidad opcional (trasfondo) */
+  /** Personalidad opcional (trasfondo): ideales, vínculos, defectos. */
   personality?: {
     ideals?: string;
     bonds?: string;
     flaws?: string;
   };
+  /** Estadísticas base (antes de raza). Si no se envían, se usan 10 en todas. */
+  abilities?: AbilitiesInput;
   /** No enviar: el userId se toma del JWT en el backend */
 }
 

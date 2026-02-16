@@ -26,6 +26,7 @@ export async function createCharacter(req: AuthRequest, res: Response) {
       alignmentId,
       skillProficiencies = [],
       personality,
+      abilities: abilitiesInput,
     } = req.body as CreateCharacterRequest;
 
     if (!nameEs || !raceId || !classId) {
@@ -76,13 +77,14 @@ export async function createCharacter(req: AuthRequest, res: Response) {
     const abilitiesId = uuidv4();
     const gameStatsId = uuidv4();
 
+    const clamp = (n: number) => Math.max(8, Math.min(20, Math.floor(Number(n)) || 10));
     let baseAbilities = {
-      strength: 10,
-      dexterity: 10,
-      constitution: 10,
-      intelligence: 10,
-      wisdom: 10,
-      charisma: 10,
+      strength: clamp(abilitiesInput?.strength ?? 10),
+      dexterity: clamp(abilitiesInput?.dexterity ?? 10),
+      constitution: clamp(abilitiesInput?.constitution ?? 10),
+      intelligence: clamp(abilitiesInput?.intelligence ?? 10),
+      wisdom: clamp(abilitiesInput?.wisdom ?? 10),
+      charisma: clamp(abilitiesInput?.charisma ?? 10),
     };
     baseAbilities.strength += race.abilityBonus.strength || 0;
     baseAbilities.dexterity += race.abilityBonus.dexterity || 0;

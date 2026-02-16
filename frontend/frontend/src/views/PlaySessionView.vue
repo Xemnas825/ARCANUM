@@ -172,7 +172,10 @@ function goSheet() {
 <template>
   <div class="page">
     <header class="header">
-      <h1>ARCANUM</h1>
+      <div class="logo">
+        <span class="logo-icon">✦</span>
+        <h1>ARCANUM</h1>
+      </div>
       <div class="nav">
         <button type="button" class="btn ghost" @click="goSheet">Ficha</button>
         <button type="button" class="btn ghost" @click="back">← Volver</button>
@@ -186,7 +189,7 @@ function goSheet() {
         <h2 class="title">{{ (sheet.nameEs as string) || (sheet.nameEn as string) }}</h2>
         <p class="subtitle">En partida · Nivel {{ sheet.level }} {{ sheet.classNameEs }}</p>
 
-        <section class="panel">
+        <section class="panel parchment-panel animate-fade-in">
           <h3>Vida y recursos</h3>
           <div class="hp-row">
             <div class="hp-box">
@@ -223,7 +226,7 @@ function goSheet() {
           </div>
         </section>
 
-        <section v-if="spellLevels.length" class="panel">
+        <section v-if="spellLevels.length" class="panel parchment-panel animate-fade-in">
           <h3>Puntos de hechizo</h3>
           <div class="spell-slots">
             <div v-for="l in spellLevels" :key="l" class="slot-row">
@@ -239,7 +242,7 @@ function goSheet() {
           </div>
         </section>
 
-        <section class="panel">
+        <section class="panel parchment-panel animate-fade-in">
           <h3>Concentración</h3>
           <div class="concentration-row">
             <input
@@ -254,7 +257,7 @@ function goSheet() {
           </div>
         </section>
 
-        <section class="panel">
+        <section class="panel parchment-panel animate-fade-in">
           <h3>Efectos de estado</h3>
           <div class="conditions-add">
             <select v-model="conditionToAdd" class="select">
@@ -272,7 +275,7 @@ function goSheet() {
           <p v-else class="muted">Ninguna condición activa</p>
         </section>
 
-        <section class="panel">
+        <section class="panel parchment-panel animate-fade-in">
           <h3>Inventario</h3>
           <div class="inventory-add">
             <input v-model="newItemName" type="text" placeholder="Nombre del objeto" class="input-text" />
@@ -316,14 +319,26 @@ function goSheet() {
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.5rem;
-  background: var(--card-bg, #1e1e2e);
-  border-bottom: 1px solid var(--border, #333);
+  background: linear-gradient(180deg, rgba(42, 32, 24, 0.98) 0%, rgba(26, 21, 16, 0.99) 100%);
+  border-bottom: 2px solid var(--border-parchment);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.logo-icon {
+  color: var(--accent-gold);
+  font-size: 1.25rem;
 }
 .header h1 {
+  font-family: var(--font-title);
   font-size: 1.35rem;
   margin: 0;
-  letter-spacing: 0.05em;
-  color: var(--accent, #c9a227);
+  letter-spacing: 0.15em;
+  color: var(--accent-gold-light);
+  font-weight: 700;
 }
 .nav {
   display: flex;
@@ -331,33 +346,42 @@ function goSheet() {
 }
 .btn {
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: 4px;
   font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
   border: none;
+  font-family: var(--font-body);
 }
 .btn.small {
   padding: 0.35rem 0.6rem;
   font-size: 0.85rem;
 }
 .btn.primary {
-  background: var(--accent, #c9a227);
-  color: #1a1a1a;
+  background: linear-gradient(180deg, var(--accent-gold-light) 0%, var(--accent-gold) 100%);
+  color: var(--ink);
+  border: 1px solid var(--parchment-shadow);
+  box-shadow: 0 2px 8px rgba(44, 24, 16, 0.2);
+}
+.btn.primary:hover:not(:disabled) {
+  box-shadow: 0 4px 14px var(--accent-glow);
 }
 .btn.ghost {
   background: transparent;
-  color: var(--text-muted, #888);
+  color: var(--parchment-dark);
+  border: 1px solid transparent;
 }
 .btn.ghost:hover {
-  color: var(--text, #e0e0e0);
+  color: var(--parchment);
+  border-color: var(--border-parchment);
 }
 .btn.ghost.danger:hover {
-  color: #e57373;
+  color: #b71c1c;
 }
 .btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+  transform: none;
 }
 
 .main {
@@ -368,25 +392,32 @@ function goSheet() {
   width: 100%;
 }
 .title {
+  font-family: var(--font-title);
   margin: 0 0 0.25rem 0;
   font-size: 1.5rem;
+  color: var(--ink);
+  font-weight: 600;
 }
 .subtitle {
-  color: var(--text-muted, #888);
+  color: var(--ink-muted);
   margin: 0 0 1.5rem 0;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 .panel {
-  background: var(--card-bg, #1e1e2e);
-  border: 1px solid var(--border, #333);
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 1.25rem;
   margin-bottom: 1rem;
+  box-shadow: var(--shadow-paper);
 }
 .panel h3 {
+  font-family: var(--font-title);
   margin: 0 0 1rem 0;
   font-size: 1rem;
-  color: var(--accent, #c9a227);
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-parchment);
 }
 
 .hp-row {
@@ -418,10 +449,10 @@ function goSheet() {
 .input-num,
 .input-text {
   padding: 0.5rem;
-  border-radius: 6px;
-  border: 1px solid var(--border, #333);
-  background: var(--bg, #252535);
-  color: var(--text, #e0e0e0);
+  border-radius: 4px;
+  border: 1px solid var(--border-parchment);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--ink);
   font-size: 0.95rem;
 }
 .input-num.narrow {
@@ -481,10 +512,10 @@ function goSheet() {
 .select {
   flex: 1;
   padding: 0.5rem;
-  border-radius: 6px;
-  border: 1px solid var(--border, #333);
-  background: var(--bg, #252535);
-  color: var(--text, #e0e0e0);
+  border-radius: 4px;
+  border: 1px solid var(--border-parchment);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--ink);
   font-size: 0.95rem;
 }
 .chips {
@@ -497,21 +528,23 @@ function goSheet() {
   align-items: center;
   gap: 0.35rem;
   padding: 0.35rem 0.6rem;
-  background: var(--bg, #252535);
-  border-radius: 6px;
-  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--border-parchment);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: var(--ink);
 }
 .chip-remove {
   background: none;
   border: none;
-  color: var(--text-muted, #888);
+  color: var(--ink-muted);
   cursor: pointer;
   font-size: 1.1rem;
   line-height: 1;
   padding: 0 0.15rem;
 }
 .chip-remove:hover {
-  color: #e57373;
+  color: #b71c1c;
 }
 
 .inventory-add {
@@ -530,7 +563,7 @@ function goSheet() {
   align-items: center;
   gap: 0.5rem;
   padding: 0.4rem 0;
-  border-bottom: 1px solid var(--border, #333);
+  border-bottom: 1px solid var(--border-parchment);
 }
 .inventory-item:last-child {
   border-bottom: none;
@@ -538,20 +571,25 @@ function goSheet() {
 .item-name {
   flex: 1;
   font-size: 0.95rem;
+  color: var(--ink);
 }
 
 .save-row {
   margin-top: 1rem;
 }
 .muted {
-  color: var(--text-muted, #888);
+  color: var(--ink-muted);
   font-size: 0.9rem;
   margin: 0;
 }
 .error {
-  color: #e57373;
+  color: #b71c1c;
+  padding: 0.5rem;
+  background: rgba(183, 28, 28, 0.08);
+  border-radius: 4px;
+  border: 1px solid rgba(183, 28, 28, 0.2);
 }
 .loading {
-  color: var(--text-muted, #888);
+  color: var(--ink-muted);
 }
 </style>
