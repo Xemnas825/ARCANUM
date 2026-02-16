@@ -2,14 +2,24 @@ import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import pool from '../database/pool.js';
 import { Character, CreateCharacterRequest, UpdateGameStatsRequest } from '../types/index.js';
+import { races, classes } from '../data/dnd-data.js';
 
 // ===== CREAR PERSONAJE =====
 export async function createCharacter(req: Request, res: Response) {
   try {
-    const { nameEs, nameEn, raceId, classId, userId } = req.body as CreateCharacterRequest & { nameEn?: string; userId: string };
+    const { nameEs, nameEn, raceId, subraceId, classId, subclassId, userId } = req.body as CreateCharacterRequest & { nameEn?: string; subraceId?: string; subclassId?: string; userId: string };
 
     if (!nameEs || !raceId || !classId || !userId) {
       res.status(400).json({ error: 'Faltan campos requeridos' });
+      return;
+    }
+
+    // Validar raza y clase
+    const race = races.find(r => r.id === raceId);
+    const charClass = classes.find(c => c.id === classId);
+
+    if (!race || !charClass) {
+      res.status(400).json({ error: 'Raza o clase inválida' });
       return;
     }
 
@@ -18,7 +28,7 @@ export async function createCharacter(req: Request, res: Response) {
     const gameStatsId = uuidv4();
 
     // Inicializar habilidades estándar
-    const baseAbilities = {
+    let baseAbilities = {
       strength: 10,
       dexterity: 10,
       constitution: 10,
@@ -27,14 +37,35 @@ export async function createCharacter(req: Request, res: Response) {
       charisma: 10,
     };
 
-    // Calcular HP inicial (simplificado: 8 + modificador de constitución)
+    // Aplicar bonus de raza
+    baseAbilities.strength += race.abilityBonus.strength || 0;
+    baseAbilities.dexterity += race.abilityBonus.dexterity || 0;
+    baseAbilities.constitution += race.abilityBonus.constitution || 0;
+    baseAbilities.intelligence += race.abilityBonus.intelligence || 0;
+    baseAbilities.wisdom += race.abilityBonus.wisdom || 0;
+    baseAbilities.charisma += race.abilityBonus.charisma || 0;
+
+    // Aplicar bonus de subraza si existe
+    if (subraceId && race.subraces) {
+      const subrace = race.subraces.find(sr => sr.id === subraceId);
+      if (subrace && subrace.abilityBonus) {
+        baseAbilities.strength += subrace.abilityBonus.strength || 0;
+        baseAbilities.dexterity += subrace.abilityBonus.dexterity || 0;
+        baseAbilities.constitution += subrace.abilityBonus.constitution || 0;
+        baseAbilities.intelligence += subrace.abilityBonus.intelligence || 0;
+        baseAbilities.wisdom += subrace.abilityBonus.wisdom || 0;
+        baseAbilities.charisma += subrace.abilityBonus.charisma || 0;
+      }
+    }
+
+    // Calcular HP inicial (simplificado: Hit die + modificador de constitución)
     const constitutionModifier = Math.floor((baseAbilities.constitution - 10) / 2);
-    const maxHealth = 8 + constitutionModifier;
+    const maxHealth = charClass.hitDice + constitutionModifier;
 
     await pool.query(
-      `INSERT INTO characters (id, user_id, name_es, name_en, race_id, class_id, level, experience)
-       VALUES ($1, $2, $3, $4, $5, $6, 1, 0)`,
-      [characterId, userId, nameEs, nameEn || null, raceId, classId]
+      `INSERT INTO characters (id, user_id, name_es, name_en, race_id, subrace_id, class_id, subclass_id, level, experience)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 1, 0)`,
+      [characterId, userId, nameEs, nameEn || null, raceId, subraceId || null, classId, subclassId || null]
     );
 
     await pool.query(
@@ -54,9 +85,12 @@ export async function createCharacter(req: Request, res: Response) {
       nameEs,
       nameEn: nameEn || null,
       raceId,
+      subraceId: subraceId || null,
       classId,
+      subclassId: subclassId || null,
       level: 1,
       experience: 0,
+      abilities: baseAbilities,
       health: { current: maxHealth, maximum: maxHealth },
       gold: 0,
       inspiration: 0,
@@ -73,7 +107,7 @@ export async function getCharacter(req: Request, res: Response) {
     const { id } = req.params;
 
     const charResult = await pool.query(
-      `SELECT id, user_id, name_es, name_en, race_id, class_id, level, experience, created_at, updated_at
+      `SELECT id, user_id, name_es, name_en, race_id, subrace_id, class_id, subclass_id, level, experience, created_at, updated_at
        FROM characters WHERE id = $1`,
       [id]
     );
@@ -106,7 +140,9 @@ export async function getCharacter(req: Request, res: Response) {
       nameEs: character.name_es,
       nameEn: character.name_en,
       raceId: character.race_id,
+      subraceId: character.subrace_id,
       classId: character.class_id,
+      subclassId: character.subclass_id,
       level: character.level,
       experience: character.experience,
       abilities,
@@ -142,7 +178,7 @@ export async function getUserCharacters(req: Request, res: Response) {
     const { userId } = req.params;
 
     const result = await pool.query(
-      `SELECT id, name_es, name_en, race_id, class_id, level, experience, created_at
+      `SELECT id, name_es, name_en, race_id, subrace_id, class_id, subclass_id, level, experience, created_at
        FROM characters WHERE user_id = $1 ORDER BY updated_at DESC`,
       [userId]
     );

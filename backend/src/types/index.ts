@@ -14,6 +14,27 @@ export interface Race {
     charisma?: number;
   };
   speed: number; // en pies
+  size: 'small' | 'medium';
+  languages: string[];
+  traits?: string[];
+  subraces?: Subrace[];
+}
+
+export interface Subrace {
+  id: string;
+  nameEs: string;
+  nameEn: string;
+  descriptionEs: string;
+  descriptionEn: string;
+  abilityBonus?: {
+    strength?: number;
+    dexterity?: number;
+    constitution?: number;
+    intelligence?: number;
+    wisdom?: number;
+    charisma?: number;
+  };
+  traits?: string[];
 }
 
 // ===== CLASES =====
@@ -25,6 +46,19 @@ export interface Class {
   descriptionEn: string;
   hitDice: number; // d6, d8, d10, d12
   primaryAbility: 'strength' | 'dexterity' | 'constitution' | 'intelligence' | 'wisdom' | 'charisma';
+  savingThrows: string[];
+  skillOptions: string[];
+  subclasses: Subclass[];
+}
+
+export interface Subclass {
+  id: string;
+  nameEs: string;
+  nameEn: string;
+  descriptionEs: string;
+  descriptionEn: string;
+  minLevel: number;
+  features?: string[];
 }
 
 // ===== HABILIDADES =====
@@ -44,7 +78,9 @@ export interface Character {
   nameEs: string;
   nameEn?: string;
   raceId: string;
+  subraceId?: string;
   classId: string;
+  subclassId?: string;
   level: number;
   experience: number;
   
@@ -104,7 +140,9 @@ export interface CharacterGameStats {
 export interface CreateCharacterRequest {
   nameEs: string;
   raceId: string;
+  subraceId?: string;
   classId: string;
+  subclassId?: string;
   userId: string;
 }
 
