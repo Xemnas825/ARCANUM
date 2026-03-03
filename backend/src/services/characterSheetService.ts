@@ -36,6 +36,7 @@ function proficiencyBonus(level: number): number {
 export interface CharacterRow {
   id: string;
   user_id: number;
+  campaign_id?: string | null;
   name_es: string;
   name_en: string | null;
   race_id: string;

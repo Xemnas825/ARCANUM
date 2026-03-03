@@ -29,6 +29,28 @@ export interface CampaignCharacterDto {
   username?: string;
 }
 
+export interface CampaignInviteLinkDto {
+  token: string;
+  campaignId: string;
+  expiresAt: string;
+  inviteUrl: string;
+}
+
+export interface CampaignInviteItemDto {
+  token: string;
+  inviteUrl: string;
+  expiresAt: string;
+  revoked: boolean;
+  createdAt: string;
+}
+
+export interface JoinCampaignByInviteDto {
+  joined: boolean;
+  campaignId: string;
+  campaignName: string;
+  alreadyMember: boolean;
+}
+
 export interface CharacterListItemDto {
   id: string;
   name_es: string;
@@ -77,6 +99,7 @@ export interface ClassDto {
   primaryAbility: string;
   savingThrows: string[];
   skillOptions: string[];
+  skillChoicesCount?: number;
   subclasses: SubclassDto[];
 }
 
@@ -119,6 +142,7 @@ export interface CharacterCreationOptionsDto {
   classes: ClassDto[];
   backgrounds: BackgroundDto[];
   alignments: AlignmentDto[];
+  skills?: { key: string; ability: string; nameEs: string; nameEn: string }[];
 }
 
 export interface SpellDto {
@@ -208,4 +232,14 @@ export interface CharacterSheetDto {
   concentratingOn?: string | null;
   activeConditions?: string[];
   inventory?: { id: string; name: string; quantity: number }[];
+}
+
+export interface NotificationDto {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  data?: Record<string, unknown>;
+  read_at: string | null;
+  created_at: string;
 }

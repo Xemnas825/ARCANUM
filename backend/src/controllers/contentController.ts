@@ -5,6 +5,8 @@
 import { Response } from 'express';
 import * as contentService from '../services/contentService.js';
 import { alignments } from '../data/dnd-data.js';
+import { SKILLS } from '../constants/skills.js';
+import { getClassSkillChoicesCount } from '../constants/characterCreation.js';
 import type { AuthRequest } from '../middleware/auth.js';
 
 function getCampaignIdFromQuery(req: AuthRequest): string | null {
@@ -94,11 +96,16 @@ export async function getCharacterCreationOptions(req: AuthRequest, res: Respons
       contentService.getClasses(campaignId, userId),
       contentService.getBackgrounds(campaignId, userId),
     ]);
+    const classesWithCreationMeta = classes.map((c) => ({
+      ...c,
+      skillChoicesCount: getClassSkillChoicesCount(c.id, c.skillChoicesCount),
+    }));
     res.json({
       races,
-      classes,
+      classes: classesWithCreationMeta,
       backgrounds,
       alignments,
+      skills: SKILLS,
     });
   } catch (err) {
     console.error('Error getCharacterCreationOptions:', err);

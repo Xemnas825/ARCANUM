@@ -48,6 +48,7 @@ export interface Class {
   primaryAbility: 'strength' | 'dexterity' | 'constitution' | 'intelligence' | 'wisdom' | 'charisma';
   savingThrows: string[];
   skillOptions: string[];
+  skillChoicesCount?: number;
   subclasses: Subclass[];
 }
 

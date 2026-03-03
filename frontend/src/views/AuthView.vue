@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 
 const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
 
 const isRegister = ref(false);
@@ -15,7 +16,7 @@ const email = ref('');
 const password = ref('');
 const passwordConfirm = ref('');
 
-const title = computed(() => (isRegister.value ? 'Registro' : 'Iniciar sesión'));
+const title = computed(() => (isRegister.value ? 'Crear cuenta' : 'Iniciar sesión'));
 const submitLabel = computed(() => (isRegister.value ? 'Registrarse' : 'Entrar'));
 
 const canSubmit = computed(() => {
@@ -41,7 +42,9 @@ async function submit() {
     } else {
       await auth.login(email.value.trim(), password.value);
     }
-    router.push('/personajes');
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '';
+    const target = redirect.startsWith('/') ? redirect : '/personajes';
+    router.replace(target);
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Error al procesar';
   } finally {
@@ -56,26 +59,47 @@ function toggleMode() {
 </script>
 
 <template>
-  <div class="auth">
-    <div class="auth-card parchment-panel animate-fade-in-scale">
-      <div class="auth-ornament">✦</div>
-      <h1 class="title">ARCANUM</h1>
-      <p class="subtitle">{{ title }}</p>
+  <div class="auth-bg">
+    <!-- Partículas decorativas -->
+    <div class="particles" aria-hidden="true">
+      <span class="particle p1 arc">✦</span>
+      <span class="particle p2 gold">◈</span>
+      <span class="particle p3 arc">✦</span>
+      <span class="particle p4 gold">◇</span>
+      <span class="particle p5 arc">✦</span>
+      <span class="particle p6 gold">⬡</span>
+      <span class="particle p7 arc">◈</span>
+    </div>
 
-      <form @submit.prevent="submit" class="form">
+    <div class="auth-card animate-fade-in-scale" role="main">
+      <div class="brand" aria-label="ARCANUM">
+        <div class="brand-rune" aria-hidden="true">✦</div>
+        <h1 class="brand-name">ARCANUM</h1>
+        <p class="brand-tagline">Sistema de gestión D&amp;D 5e</p>
+      </div>
+
+      <hr class="runic-separator" />
+
+      <div class="form-header">
+        <h2 class="form-title">{{ title }}</h2>
+      </div>
+
+      <form class="form" @submit.prevent="submit" novalidate>
         <div v-if="isRegister" class="field">
-          <label for="username">Usuario</label>
+          <label for="username" class="label">Usuario</label>
           <input
             id="username"
             v-model="username"
             type="text"
             autocomplete="username"
-            placeholder="Nombre de usuario"
+            placeholder="Nombre de aventurero"
             required
+            :aria-required="true"
           />
         </div>
+
         <div class="field">
-          <label for="email">{{ isRegister ? 'Email' : 'Usuario o correo' }}</label>
+          <label for="email" class="label">{{ isRegister ? 'Correo electrónico' : 'Usuario o correo' }}</label>
           <input
             id="email"
             v-model="email"
@@ -83,23 +107,26 @@ function toggleMode() {
             :autocomplete="isRegister ? 'email' : 'username'"
             :placeholder="isRegister ? 'tu@email.com' : 'Usuario o correo electrónico'"
             required
+            :aria-required="true"
           />
         </div>
+
         <div class="field">
-          <label for="password">Contraseña</label>
+          <label for="password" class="label">Contraseña</label>
           <input
             id="password"
             v-model="password"
             type="password"
-            autocomplete="password"
+            autocomplete="current-password"
             placeholder="••••••••"
             required
             minlength="6"
           />
           <span v-if="isRegister" class="hint">Mínimo 6 caracteres</span>
         </div>
+
         <div v-if="isRegister" class="field">
-          <label for="passwordConfirm">Repetir contraseña</label>
+          <label for="passwordConfirm" class="label">Repetir contraseña</label>
           <input
             id="passwordConfirm"
             v-model="passwordConfirm"
@@ -107,16 +134,26 @@ function toggleMode() {
             autocomplete="new-password"
             placeholder="••••••••"
           />
-          <span v-if="passwordConfirm && password !== passwordConfirm" class="hint error-hint">Las contraseñas no coinciden</span>
+          <span v-if="passwordConfirm && password !== passwordConfirm" class="hint hint-error" role="alert">
+            Las contraseñas no coinciden
+          </span>
         </div>
-        <p v-if="error" class="error">{{ error }}</p>
-        <button type="submit" class="btn primary" :disabled="!canSubmit || loading">
+
+        <div v-if="error" class="error-banner" role="alert">{{ error }}</div>
+
+        <button
+          type="submit"
+          class="btn-gold submit-btn btn-lg"
+          :disabled="!canSubmit || loading"
+          :aria-busy="loading"
+        >
+          <span v-if="loading" class="btn-spinner" aria-hidden="true"></span>
           {{ loading ? 'Espera...' : submitLabel }}
         </button>
       </form>
 
-      <p class="toggle">
-        <button type="button" class="link" @click="toggleMode">
+      <p class="toggle-row">
+        <button type="button" class="link-btn" @click="toggleMode">
           {{ isRegister ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate' }}
         </button>
       </p>
@@ -125,131 +162,145 @@ function toggleMode() {
 </template>
 
 <style scoped>
-.auth {
+.auth-bg {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  background-image: radial-gradient(ellipse 80% 50% at 50% 50%, rgba(184, 134, 11, 0.06) 0%, transparent 70%);
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 50%, rgba(224, 152, 72, 0.06) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 20% 80%, rgba(201, 162, 39, 0.04) 0%, transparent 50%);
 }
+
+/* Partículas flotantes decorativas */
+.particles { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+.particle {
+  position: absolute;
+  opacity: 0;
+  font-size: 0.8rem;
+  animation: floatParticle 9s ease-in-out infinite;
+}
+.particle.arc  { color: var(--arcane); filter: drop-shadow(0 0 4px rgba(224,152,72,0.5)); }
+.particle.gold { color: var(--gold);   filter: drop-shadow(0 0 4px rgba(201,160,48,0.4)); }
+.p1 { left: 10%; top: 20%; animation-delay: 0s;   opacity: 0.22; }
+.p2 { left: 85%; top: 15%; animation-delay: 1.5s; opacity: 0.16; font-size: 1.1rem; }
+.p3 { left: 70%; top: 75%; animation-delay: 3s;   opacity: 0.20; }
+.p4 { left: 20%; top: 70%; animation-delay: 4.5s; opacity: 0.14; font-size: 1.2rem; }
+.p5 { left: 50%; top: 5%;  animation-delay: 2s;   opacity: 0.12; }
+.p6 { left: 35%; top: 88%; animation-delay: 5.5s; opacity: 0.18; font-size: 1rem; }
+.p7 { left: 92%; top: 55%; animation-delay: 0.8s; opacity: 0.14; font-size: 0.7rem; }
+
+@keyframes floatParticle {
+  0%, 100% { transform: translateY(0) rotate(0deg);   opacity: 0.12; }
+  50%       { transform: translateY(-22px) rotate(18deg); opacity: 0.32; }
+}
+
+/* Tarjeta central */
 .auth-card {
   width: 100%;
-  max-width: 400px;
-  border-radius: 6px;
-  padding: 2.25rem;
-  box-shadow: var(--shadow-paper), 0 20px 50px rgba(0, 0, 0, 0.25);
+  max-width: 420px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-arcane);
+  border-radius: 12px;
+  padding: 2.5rem 2.25rem;
+  box-shadow: var(--shadow-raised), var(--arcane-glow), 0 0 80px rgba(224,152,72,0.05);
   position: relative;
+  z-index: 1;
 }
-.auth-ornament {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  color: var(--accent-gold);
-  opacity: 0.5;
-  font-size: 1.1rem;
+
+/* Marca */
+.brand { text-align: center; margin-bottom: 1.25rem; }
+.brand-rune {
+  font-size: 2rem;
+  color: var(--gold);
+  display: block;
+  margin-bottom: 0.5rem;
+  animation: shimmer 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgba(201, 162, 39, 0.5));
 }
-.title {
+.brand-name {
   font-family: var(--font-title);
-  font-size: 1.9rem;
-  margin: 0 0 0.25rem 0;
-  letter-spacing: 0.2em;
-  color: var(--ink);
+  font-size: 2.2rem;
   font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--text-primary);
+  margin: 0 0 0.35rem 0;
+  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-light) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
-.subtitle {
-  color: var(--ink-muted);
-  margin: 0 0 1.5rem 0;
-  font-size: 1rem;
-}
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-.field label {
-  font-size: 0.9rem;
-  color: var(--ink-muted);
-  font-weight: 600;
-}
-.field input {
-  padding: 0.7rem 0.9rem;
-  border: 1px solid var(--border-parchment);
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.5);
-  color: var(--ink);
-  font-size: 1rem;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-.field input::placeholder {
-  color: var(--ink-muted);
-  opacity: 0.7;
-}
-.field input:focus {
-  outline: none;
-  border-color: var(--accent-gold);
-  background: rgba(255, 255, 255, 0.7);
-  box-shadow: 0 0 0 2px var(--accent-glow);
-}
-.hint {
+.brand-tagline {
+  font-family: var(--font-data);
   font-size: 0.8rem;
-  color: var(--ink-muted);
-}
-.hint.error-hint {
-  color: #b71c1c;
-}
-.error {
-  color: #b71c1c;
-  font-size: 0.9rem;
+  color: var(--text-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   margin: 0;
-  padding: 0.5rem;
-  background: rgba(183, 28, 28, 0.08);
-  border-radius: 4px;
-  border: 1px solid rgba(183, 28, 28, 0.2);
 }
-.btn {
-  padding: 0.75rem 1.25rem;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
+
+/* Encabezado de formulario */
+.form-header { margin-bottom: 1.25rem; }
+.form-title {
+  font-family: var(--font-title);
+  font-size: 1.1rem;
   font-weight: 600;
-  cursor: pointer;
-  font-family: var(--font-body);
-  border: 1px solid var(--parchment-shadow);
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: 0;
 }
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
+
+/* Formulario */
+.form { display: flex; flex-direction: column; gap: 1.1rem; }
+.field { display: flex; flex-direction: column; gap: 0.4rem; }
+.label {
+  font-family: var(--font-data);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
 }
-.btn.primary {
-  background: linear-gradient(180deg, var(--accent-gold-light) 0%, var(--accent-gold) 100%);
-  color: var(--ink);
-  box-shadow: 0 2px 8px rgba(44, 24, 16, 0.2), inset 0 1px 0 rgba(255,255,255,0.3);
+
+.field input { width: 100%; }
+
+.hint { font-family: var(--font-data); font-size: 0.78rem; color: var(--text-faint); }
+.hint-error { color: var(--danger); }
+
+/* Botón de envío */
+.submit-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  font-family: var(--font-title);
+  letter-spacing: 0.06em;
 }
-.btn.primary:hover:not(:disabled) {
-  box-shadow: 0 4px 14px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.3);
+.btn-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(201, 162, 39, 0.3);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
 }
-.toggle {
-  margin: 1.5rem 0 0 0;
-  text-align: center;
-}
-.link {
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toggle */
+.toggle-row { margin: 1.25rem 0 0 0; text-align: center; }
+.link-btn {
   background: none;
   border: none;
-  color: var(--accent-gold);
+  color: var(--arcane);
   cursor: pointer;
-  font-size: 0.95rem;
-  padding: 0;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  padding: 0.25rem;
+  transition: color var(--ease-quick), text-shadow var(--ease-quick);
 }
-.link:hover {
-  color: var(--accent-gold-light);
-}
+.link-btn:hover { color: #f0b870; text-shadow: 0 0 8px rgba(224,152,72,0.4); }
 </style>

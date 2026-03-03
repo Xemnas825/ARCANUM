@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as authController from '../controllers/authController.js';
 import * as characterController from '../controllers/characterController.js';
 import * as campaignController from '../controllers/campaignController.js';
+import * as notificationController from '../controllers/notificationController.js';
 import * as dndController from '../controllers/dndController.js';
 import * as contentController from '../controllers/contentController.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -64,13 +65,22 @@ router.get('/magic-items/:id', requireAuth, dndController.getMagicItemById);
 
 // ===== RUTAS DE CAMPAÑAS =====
 router.get('/campaigns', requireAuth, campaignController.listCampaigns);
+router.post('/campaigns/join/:token', requireAuth, campaignController.joinCampaignByInvite);
 router.get('/campaigns/:id', requireAuth, requireCampaignMember, campaignController.getCampaign);
 router.post('/campaigns', requireAuth, campaignController.createCampaign);
 router.patch('/campaigns/:id', requireAuth, requireCampaignMaster, campaignController.updateCampaign);
 router.delete('/campaigns/:id', requireAuth, requireCampaignMaster, campaignController.deleteCampaign);
+router.post('/campaigns/:id/invite-link', requireAuth, requireCampaignMaster, campaignController.createInviteLink);
+router.get('/campaigns/:id/invite-links', requireAuth, requireCampaignMaster, campaignController.listInviteLinks);
+router.post('/campaigns/:id/invite-links/:token/revoke', requireAuth, requireCampaignMaster, campaignController.revokeInviteLink);
 router.get('/campaigns/:id/members', requireAuth, requireCampaignMember, campaignController.getMembers);
 router.post('/campaigns/:id/members', requireAuth, requireCampaignMaster, campaignController.addMember);
 router.get('/campaigns/:id/characters', requireAuth, requireCampaignMember, campaignController.getCampaignCharacters);
+
+// ===== NOTIFICACIONES IN-APP =====
+router.get('/notifications', requireAuth, notificationController.listNotifications);
+router.post('/notifications/read-all', requireAuth, notificationController.markAllNotificationsRead);
+router.post('/notifications/:id/read', requireAuth, notificationController.markNotificationRead);
 
 // ===== RUTAS DE PERSONAJES (protegidas con JWT) =====
 router.post('/characters', requireAuth, characterController.createCharacter);

@@ -4,8 +4,9 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { useCampaignStore } from '../stores/campaigns';
 import { api } from '../api/client';
-import type { CampaignCharacterDto } from '../types/api';
+import type { CampaignCharacterDto, CampaignInviteLinkDto, CampaignInviteItemDto } from '../types/api';
 import AppHeader from '../components/AppHeader.vue';
+import ContextHelp from '../components/ContextHelp.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -21,6 +22,12 @@ const editDescription = ref('');
 const editImageUrl = ref('');
 const saving = ref(false);
 const deleteConfirm = ref(false);
+const inviteDays = ref(7);
+const inviteLink = ref('');
+const creatingInvite = ref(false);
+const inviteLinks = ref<CampaignInviteItemDto[]>([]);
+const loadingInvites = ref(false);
+const revokingToken = ref<string | null>(null);
 
 const isMaster = computed(() => {
   const c = campaignsStore.current;
@@ -35,6 +42,7 @@ onMounted(() => {
         editDescription.value = campaignsStore.current.description ?? '';
         editImageUrl.value = campaignsStore.current.image_url ?? '';
         loadCharacters();
+        if (isMaster.value) loadInviteLinks();
       }
     });
   }
@@ -48,6 +56,7 @@ watch(campaignId, (id) => {
         editDescription.value = campaignsStore.current.description ?? '';
         editImageUrl.value = campaignsStore.current.image_url ?? '';
         loadCharacters();
+        if (isMaster.value) loadInviteLinks();
       }
     });
   }
@@ -115,6 +124,64 @@ function goCharacter(id: string) {
   router.push(`/personajes/${id}`);
 }
 
+async function createInviteLink() {
+  if (!campaignId.value) return;
+  creatingInvite.value = true;
+  try {
+    const data = await api.post<CampaignInviteLinkDto>(`/campaigns/${campaignId.value}/invite-link`, {
+      expiresInDays: inviteDays.value,
+    });
+    inviteLink.value = data.inviteUrl;
+    await loadInviteLinks();
+  } catch (e) {
+    campaignsStore.error = e instanceof Error ? e.message : 'Error al crear invitación';
+  } finally {
+    creatingInvite.value = false;
+  }
+}
+
+async function copyInviteLink() {
+  if (!inviteLink.value) return;
+  try {
+    await navigator.clipboard.writeText(inviteLink.value);
+  } catch {
+    campaignsStore.error = 'No se pudo copiar el enlace';
+  }
+}
+
+async function copyInviteUrl(url: string) {
+  try {
+    await navigator.clipboard.writeText(url);
+  } catch {
+    campaignsStore.error = 'No se pudo copiar el enlace';
+  }
+}
+
+async function loadInviteLinks() {
+  if (!campaignId.value || !isMaster.value) return;
+  loadingInvites.value = true;
+  try {
+    inviteLinks.value = await api.get<CampaignInviteItemDto[]>(`/campaigns/${campaignId.value}/invite-links`);
+  } catch {
+    inviteLinks.value = [];
+  } finally {
+    loadingInvites.value = false;
+  }
+}
+
+async function revokeInvite(token: string) {
+  if (!campaignId.value) return;
+  revokingToken.value = token;
+  try {
+    await api.post(`/campaigns/${campaignId.value}/invite-links/${token}/revoke`, {});
+    await loadInviteLinks();
+  } catch (e) {
+    campaignsStore.error = e instanceof Error ? e.message : 'Error al revocar invitación';
+  } finally {
+    revokingToken.value = null;
+  }
+}
+
 const classNames: Record<string, string> = {
   barbarian: 'Bárbaro', bard: 'Bardo', cleric: 'Clérigo', druid: 'Druida', fighter: 'Guerrero',
   monk: 'Monje', paladin: 'Paladín', ranger: 'Guardabosques', rogue: 'Pícaro', sorcerer: 'Hechicero',
@@ -140,330 +207,300 @@ function logout() {
     </AppHeader>
 
     <main class="main">
-      <div v-if="campaignsStore.loading && !campaignsStore.current" class="loading-wrap">
+      <div v-if="campaignsStore.loading && !campaignsStore.current" class="loader-wrap">
         <div class="loader"></div>
         <p>Cargando campaña...</p>
       </div>
 
       <template v-else-if="campaignsStore.current">
-        <div class="breadcrumb">
-          <button type="button" class="link" @click="goBack">← Campañas</button>
+        <div class="breadcrumb animate-fade-in">
+          <button type="button" class="back-link" @click="goBack">← Campañas</button>
         </div>
+        <ContextHelp
+          title="Gestión de campaña"
+          :tips="[
+            'Como Máster puedes editar esta campaña y administrar miembros.',
+            'Revisa personajes vinculados para saltar directo a su ficha.',
+            'Mantén descripción e imagen actualizadas para orientar al grupo.'
+          ]"
+          compact
+        />
 
-        <section class="hero parchment-panel">
+        <section class="hero dark-card animate-fade-in">
           <div class="hero-content">
             <div v-if="!editing" class="header-row">
               <h1 class="campaign-name">{{ campaignsStore.current.name }}</h1>
-              <span class="role-badge" :class="campaignsStore.current.role">
-                {{ campaignsStore.current.role === 'master' ? 'Master' : 'Jugador' }}
+              <span
+                class="badge"
+                :class="campaignsStore.current.role === 'master' ? 'badge-gold' : 'badge-arcane'"
+              >
+                {{ campaignsStore.current.role === 'master' ? 'Máster' : 'Jugador' }}
               </span>
-              <button v-if="isMaster" type="button" class="btn ghost btn-sm" @click="startEdit">Editar</button>
+              <button v-if="isMaster" type="button" class="btn-ghost btn-sm" @click="startEdit" aria-label="Editar campaña">Editar</button>
             </div>
             <form v-else class="edit-form" @submit.prevent="saveEdit">
-              <input v-model="editName" type="text" required class="edit-input" placeholder="Nombre" />
-              <textarea v-model="editDescription" rows="2" class="edit-textarea" placeholder="Descripción"></textarea>
-              <input v-model="editImageUrl" type="url" class="edit-input" placeholder="URL imagen" />
+              <input v-model="editName" type="text" required placeholder="Nombre de la campaña" aria-label="Nombre" />
+              <textarea v-model="editDescription" rows="2" placeholder="Descripción" aria-label="Descripción"></textarea>
+              <input v-model="editImageUrl" type="url" placeholder="URL de imagen (opcional)" aria-label="URL imagen" />
               <div class="edit-actions">
-                <button type="button" class="btn ghost" @click="cancelEdit">Cancelar</button>
-                <button type="submit" class="btn primary" :disabled="saving">{{ saving ? 'Guardando…' : 'Guardar' }}</button>
+                <button type="button" class="btn-ghost btn-sm" @click="cancelEdit">Cancelar</button>
+                <button type="submit" class="btn-arc btn-sm" :disabled="saving">{{ saving ? 'Guardando…' : 'Guardar' }}</button>
               </div>
             </form>
             <p v-if="!editing && campaignsStore.current.description" class="description">
               {{ campaignsStore.current.description }}
             </p>
-            <p v-if="campaignsStore.error" class="error">{{ campaignsStore.error }}</p>
+            <div v-if="isMaster && !editing" class="invite-zone">
+              <label for="invite-days" class="invite-label">Invitación por enlace</label>
+              <div class="invite-row">
+                <select id="invite-days" v-model.number="inviteDays" class="invite-select">
+                  <option :value="1">1 día</option>
+                  <option :value="3">3 días</option>
+                  <option :value="7">7 días</option>
+                  <option :value="14">14 días</option>
+                  <option :value="30">30 días</option>
+                </select>
+                <button type="button" class="btn-arc btn-sm" :disabled="creatingInvite" @click="createInviteLink">
+                  {{ creatingInvite ? 'Generando…' : 'Generar enlace' }}
+                </button>
+              </div>
+              <div v-if="inviteLink" class="invite-result">
+                <input :value="inviteLink" readonly class="invite-input" aria-label="Enlace de invitación" />
+                <button type="button" class="btn-gold btn-sm" @click="copyInviteLink">Copiar</button>
+              </div>
+              <div class="invite-list-wrap">
+                <p class="invite-list-title">Enlaces recientes</p>
+                <p v-if="loadingInvites" class="empty-note">Cargando invitaciones...</p>
+                <ul v-else-if="inviteLinks.length" class="invite-list" role="list">
+                  <li v-for="link in inviteLinks.slice(0, 5)" :key="link.token" class="invite-item" role="listitem">
+                    <span class="invite-expire">
+                      Expira: {{ new Date(link.expiresAt).toLocaleDateString() }}
+                      <span v-if="link.revoked" class="badge badge-danger">Revocada</span>
+                    </span>
+                    <div class="invite-item-actions">
+                      <button type="button" class="btn-ghost btn-sm" @click="copyInviteUrl(link.inviteUrl)">Copiar</button>
+                      <button
+                        v-if="!link.revoked"
+                        type="button"
+                        class="btn-danger btn-sm"
+                        :disabled="revokingToken === link.token"
+                        @click="revokeInvite(link.token)"
+                      >
+                        {{ revokingToken === link.token ? '…' : 'Revocar' }}
+                      </button>
+                    </div>
+                  </li>
+                </ul>
+                <p v-else class="empty-note">Aún no hay enlaces creados.</p>
+              </div>
+            </div>
+            <div v-if="campaignsStore.error" class="error-banner" role="alert">{{ campaignsStore.error }}</div>
             <div v-if="isMaster && !editing" class="danger-zone">
               <button
                 type="button"
-                class="btn danger"
+                class="btn-danger btn-sm"
                 :disabled="deleteConfirm"
                 @click="deleteConfirm = true"
+                aria-label="Iniciar proceso de eliminación"
               >
-                {{ deleteConfirm ? '¿Eliminar campaña? Clic de nuevo para confirmar' : 'Eliminar campaña' }}
+                {{ deleteConfirm ? '¿Seguro? Clic para confirmar' : 'Eliminar campaña' }}
               </button>
-              <button v-if="deleteConfirm" type="button" class="btn primary" @click="doDelete">Confirmar eliminación</button>
-              <button v-if="deleteConfirm" type="button" class="btn ghost" @click="deleteConfirm = false">Cancelar</button>
+              <button v-if="deleteConfirm" type="button" class="btn-danger btn-sm" @click="doDelete" aria-label="Confirmar eliminación">Confirmar</button>
+              <button v-if="deleteConfirm" type="button" class="btn-ghost btn-sm" @click="deleteConfirm = false">Cancelar</button>
             </div>
           </div>
         </section>
 
-        <section class="section parchment-panel">
-          <h2 class="section-title">Miembros</h2>
-          <ul class="members-list">
-            <li v-for="m in campaignsStore.current.members" :key="m.user_id" class="member">
-              <span class="member-name">{{ m.username }}</span>
-              <span class="role-badge small" :class="m.role">{{ m.role === 'master' ? 'Master' : 'Jugador' }}</span>
-            </li>
-          </ul>
-        </section>
+        <hr class="runic-separator" />
 
-        <section class="section parchment-panel">
-          <h2 class="section-title">Personajes en esta campaña</h2>
-          <div v-if="loadingChars" class="loading-inline">Cargando...</div>
-          <ul v-else-if="characters.length === 0" class="chars-list empty">
-            <li>Ningún personaje asociado aún.</li>
-          </ul>
-          <ul v-else class="chars-list">
-            <li
-              v-for="ch in characters"
-              :key="ch.id"
-              class="char-item"
-              @click="goCharacter(ch.id)"
-            >
-              <span class="char-name">{{ ch.name_es || ch.name_en }}</span>
-              <span class="char-meta">Nivel {{ ch.level }} · {{ className(ch.class_id) }}</span>
-              <span v-if="ch.username" class="char-user">{{ ch.username }}</span>
-            </li>
-          </ul>
-        </section>
+        <div class="detail-grid">
+          <section class="section dark-card animate-fade-in" aria-labelledby="members-title">
+            <h2 id="members-title" class="section-title">Miembros</h2>
+            <ul class="members-list" role="list">
+              <li v-for="m in campaignsStore.current.members" :key="m.user_id" class="member" role="listitem">
+                <span class="member-avatar" aria-hidden="true">{{ m.username.charAt(0).toUpperCase() }}</span>
+                <span class="member-name">{{ m.username }}</span>
+                <span class="badge" :class="m.role === 'master' ? 'badge-gold' : 'badge-arcane'">
+                  {{ m.role === 'master' ? 'Máster' : 'Jugador' }}
+                </span>
+              </li>
+            </ul>
+          </section>
+
+          <section class="section dark-card animate-fade-in" aria-labelledby="chars-title">
+            <h2 id="chars-title" class="section-title">Personajes en campaña</h2>
+            <div v-if="loadingChars" class="loading-inline" aria-live="polite">Cargando...</div>
+            <p v-else-if="characters.length === 0" class="empty-note">Ningún personaje asociado aún.</p>
+            <ul v-else class="chars-list" role="list">
+              <li
+                v-for="ch in characters"
+                :key="ch.id"
+                class="char-item"
+                role="listitem"
+                tabindex="0"
+                @click="goCharacter(ch.id)"
+                @keydown.enter="goCharacter(ch.id)"
+              >
+                <span class="char-icon" aria-hidden="true">◈</span>
+                <div class="char-details">
+                  <span class="char-name">{{ ch.name_es || ch.name_en }}</span>
+                  <span class="char-meta">Nivel {{ ch.level }} · {{ className(ch.class_id) }}</span>
+                </div>
+                <span v-if="ch.username" class="char-user">{{ ch.username }}</span>
+              </li>
+            </ul>
+          </section>
+        </div>
       </template>
 
-      <div v-else class="empty parchment-panel">
-        <p>Campaña no encontrada o sin acceso.</p>
-        <button type="button" class="btn ghost" @click="goBack">Volver a campañas</button>
+      <div v-else class="empty-state dark-card animate-fade-in">
+        <p class="empty-note">Campaña no encontrada o sin acceso.</p>
+        <button type="button" class="btn-ghost" @click="goBack">Volver a campañas</button>
       </div>
     </main>
   </div>
 </template>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-.username {
-  color: var(--parchment-dark);
-  font-size: 0.95rem;
-}
-.btn {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  font-family: var(--font-body);
-}
-.btn.primary {
-  background: linear-gradient(180deg, var(--accent-gold-light) 0%, var(--accent-gold) 100%);
-  color: var(--ink);
-  border: 1px solid var(--parchment-shadow);
-}
-.btn.ghost {
-  background: transparent;
-  color: var(--parchment-dark);
-  border: 1px solid transparent;
-}
-.btn.ghost:hover {
-  color: var(--parchment);
-  border-color: var(--border-parchment);
-}
-.btn.danger {
-  background: rgba(183, 28, 28, 0.15);
-  color: #b71c1c;
-  border: 1px solid rgba(183, 28, 28, 0.4);
-}
-.btn.danger:hover:not(:disabled) {
-  background: rgba(183, 28, 28, 0.25);
-}
-.btn-sm {
-  padding: 0.4rem 0.75rem;
-  font-size: 0.9rem;
-}
 .main {
   flex: 1;
   padding: 2rem 1.5rem;
-  max-width: 720px;
+  max-width: 800px;
   margin: 0 auto;
   width: 100%;
 }
-.breadcrumb {
-  margin-bottom: 1rem;
-}
-.link {
+.breadcrumb { margin-bottom: 1rem; }
+.back-link {
   background: none;
   border: none;
-  color: var(--accent-gold);
+  color: var(--arcane);
   cursor: pointer;
-  font-size: 0.95rem;
   font-family: var(--font-body);
+  font-size: 0.95rem;
+  padding: 0.25rem 0;
+  transition: color var(--ease-quick), text-shadow var(--ease-quick);
 }
-.link:hover {
-  text-decoration: underline;
-}
-.loading-wrap {
-  text-align: center;
-  padding: 3rem;
-  color: var(--ink-muted);
-}
-.loader {
-  width: 44px;
-  height: 44px;
-  margin: 0 auto 1rem;
-  border: 3px solid var(--parchment-shadow);
-  border-top-color: var(--accent-gold);
-  border-radius: 50%;
-  animation: spin 0.9s linear infinite;
-}
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-.hero {
-  padding: 1.5rem 2rem;
-  margin-bottom: 1.5rem;
-}
-.hero-content {
+.back-link:hover { color: #93c5fd; text-shadow: 0 0 8px rgba(96,165,250,0.35); }
+
+/* Hero */
+.hero { padding: 1.5rem 1.75rem; margin-bottom: 0; }
+.hero-content { display: flex; flex-direction: column; gap: 0.85rem; }
+.header-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.campaign-name { font-family: var(--font-title); font-size: 1.6rem; margin: 0; font-weight: 600; letter-spacing: 0.05em; }
+
+.description { margin: 0; color: var(--text-muted); font-size: 1rem; line-height: 1.6; }
+
+.edit-form { display: flex; flex-direction: column; gap: 0.75rem; }
+.edit-form input, .edit-form textarea { width: 100%; font-family: var(--font-body); }
+.edit-form textarea { resize: vertical; }
+.edit-actions { display: flex; gap: 0.5rem; }
+
+.invite-zone {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.45rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
 }
-.header-row {
+.invite-label {
+  color: var(--text-muted);
+  font-family: var(--font-data);
+  font-size: 0.8rem;
+}
+.invite-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.invite-select { width: 120px; }
+.invite-result { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.invite-input {
+  flex: 1;
+  min-width: 220px;
+  font-family: var(--font-data);
+}
+.invite-list-wrap { margin-top: 0.35rem; }
+.invite-list-title {
+  margin: 0 0 0.4rem 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-family: var(--font-data);
+}
+.invite-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.invite-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-.campaign-name {
-  font-family: var(--font-title);
-  font-size: 1.5rem;
-  margin: 0;
-  color: var(--ink);
-  font-weight: 600;
-  letter-spacing: 0.05em;
-}
-.role-badge {
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-}
-.role-badge.master {
-  background: rgba(184, 134, 11, 0.2);
-  color: var(--accent-gold);
-  border: 1px solid var(--accent-gold);
-}
-.role-badge.player {
-  background: rgba(44, 24, 16, 0.1);
-  color: var(--ink-muted);
-  border: 1px solid var(--border-parchment);
-}
-.role-badge.small {
-  font-size: 0.75rem;
-}
-.description {
-  margin: 0;
-  color: var(--ink-muted);
-  font-size: 1rem;
-  line-height: 1.5;
-}
-.edit-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-.edit-input,
-.edit-textarea {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--border-parchment);
-  border-radius: 4px;
-  background: rgba(255,255,255,0.6);
-  color: var(--ink);
-  font-size: 1rem;
-  font-family: var(--font-body);
-}
-.edit-actions {
-  display: flex;
+  justify-content: space-between;
   gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.02);
 }
+.invite-expire { color: var(--text-muted); font-size: 0.82rem; }
+.invite-item-actions { display: flex; gap: 0.35rem; }
+
 .danger-zone {
   display: flex;
   gap: 0.5rem;
   align-items: center;
   flex-wrap: wrap;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-parchment);
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(248,113,113,0.15);
 }
-.error {
-  color: #b71c1c;
-  font-size: 0.95rem;
-  margin: 0;
-}
-.section {
-  padding: 1.25rem 1.5rem;
-  margin-bottom: 1rem;
-}
-.section-title {
+
+/* Grid de detalle */
+.detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+.section { padding: 1.25rem 1.5rem; }
+
+/* Miembros */
+.members-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.member { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.6rem; border-radius: 6px; transition: background var(--ease-quick); }
+.member:hover { background: rgba(255,255,255,0.03); }
+.member-avatar {
+  width: 2rem; height: 2rem;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--arcane-dim);
+  border: 1px solid var(--border-arcane);
+  border-radius: 50%;
   font-family: var(--font-title);
-  font-size: 1.1rem;
-  margin: 0 0 1rem 0;
-  color: var(--ink);
-  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--arcane);
+  flex-shrink: 0;
 }
-.members-list,
-.chars-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.member {
+.member-name { flex: 1; font-weight: 500; color: var(--text-primary); font-size: 0.95rem; }
+
+/* Personajes */
+.chars-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.char-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--border-parchment);
-}
-.member:last-child {
-  border-bottom: none;
-}
-.member-name {
-  font-weight: 500;
-  color: var(--ink);
-}
-.chars-list.empty {
-  color: var(--ink-muted);
-  font-style: italic;
-  padding: 1rem 0;
-}
-.char-item {
-  padding: 0.75rem;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
-  border: 1px solid var(--border-parchment);
-  margin-bottom: 0.5rem;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
+  transition: background var(--ease-quick), border-color var(--ease-quick);
 }
-.char-item:hover {
-  background: rgba(184, 134, 11, 0.08);
-  border-color: var(--accent-gold);
-}
-.char-name {
-  font-weight: 600;
-  color: var(--ink);
-  display: block;
-}
-.char-meta {
-  font-size: 0.9rem;
-  color: var(--ink-muted);
-}
-.char-user {
-  font-size: 0.85rem;
-  color: var(--accent-gold);
-  margin-top: 0.25rem;
-  display: block;
-}
-.loading-inline {
-  color: var(--ink-muted);
-  padding: 0.5rem 0;
-}
-.empty {
-  text-align: center;
-  padding: 2rem;
-}
-.empty p {
-  margin: 0 0 1rem 0;
-  color: var(--ink-muted);
+.char-item:hover { background: rgba(96,165,250,0.06); border-color: var(--border-arcane); }
+.char-item:focus-visible { outline: 2px solid var(--arcane); outline-offset: 2px; }
+.char-icon { color: var(--arcane); opacity: 0.5; font-size: 0.9rem; flex-shrink: 0; }
+.char-details { flex: 1; min-width: 0; }
+.char-name { font-weight: 600; color: var(--text-primary); font-size: 0.95rem; display: block; }
+.char-meta { font-family: var(--font-data); font-size: 0.8rem; color: var(--text-muted); }
+.char-user { font-family: var(--font-data); font-size: 0.78rem; color: var(--gold); }
+
+.empty-note { color: var(--text-faint); font-style: italic; font-size: 0.9rem; margin: 0; }
+.loading-inline { color: var(--text-muted); font-size: 0.9rem; }
+.empty-state { text-align: center; padding: 3rem 2rem; max-width: 360px; margin: 2rem auto; }
+
+@media (max-width: 560px) {
+  .detail-grid { grid-template-columns: 1fr; }
+  .header-row { gap: 0.5rem; }
 }
 </style>

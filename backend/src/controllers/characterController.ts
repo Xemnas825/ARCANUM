@@ -5,6 +5,7 @@ import { CreateCharacterRequest, UpdateGameStatsRequest } from '../types/index.j
 import { races, classes, backgrounds, alignments } from '../data/dnd-data.js';
 import * as contentService from '../services/contentService.js';
 import { getSkillKeyFromBackgroundName } from '../constants/skills.js';
+import { getClassSkillChoicesCount } from '../constants/characterCreation.js';
 import { buildCharacterSheet, type CharacterRow, type AbilitiesRow, type GameStatsRow } from '../services/characterSheetService.js';
 import type { AuthRequest } from '../middleware/auth.js';
 
@@ -73,15 +74,25 @@ export async function createCharacter(req: AuthRequest, res: Response) {
       return;
     }
 
-    const classSkillOptions = charClass.skillOptions || [];
-    const maxClassSkills = 2;
-    const chosenFromClass = skillProficiencies.filter(k => classSkillOptions.includes(k));
-    if (chosenFromClass.length > maxClassSkills) {
-      res.status(400).json({ error: `Solo puedes elegir hasta ${maxClassSkills} competencias de la lista de tu clase` });
+    const classSkillOptions = Array.isArray(charClass.skillOptions) ? charClass.skillOptions : [];
+    const requiredClassSkills = Math.min(
+      classSkillOptions.length,
+      getClassSkillChoicesCount(charClass.id, charClass.skillChoicesCount)
+    );
+    const requestedSkills = Array.isArray(skillProficiencies)
+      ? [...new Set(skillProficiencies.filter((k): k is string => typeof k === 'string' && k.trim().length > 0))]
+      : [];
+    const invalidRequested = requestedSkills.filter((k) => !classSkillOptions.includes(k));
+    if (invalidRequested.length > 0) {
+      res.status(400).json({ error: `Competencias inválidas para la clase: ${invalidRequested.join(', ')}` });
       return;
     }
-    if (chosenFromClass.some(k => !classSkillOptions.includes(k))) {
-      res.status(400).json({ error: 'Alguna competencia elegida no pertenece a las opciones de tu clase' });
+    if (requestedSkills.length > requiredClassSkills) {
+      res.status(400).json({ error: `Solo puedes elegir ${requiredClassSkills} competencias para esta clase` });
+      return;
+    }
+    if (classSkillOptions.length > 0 && requestedSkills.length !== requiredClassSkills) {
+      res.status(400).json({ error: `Debes elegir exactamente ${requiredClassSkills} competencias para esta clase` });
       return;
     }
 
@@ -91,7 +102,12 @@ export async function createCharacter(req: AuthRequest, res: Response) {
         `SELECT 1 FROM campaign_members WHERE campaign_id = $1 AND user_id = $2`,
         [campaignIdNorm, userId]
       );
-      if (memberCheck.rows.length > 0) campaignIdToSet = campaignIdNorm;
+      if (memberCheck.rows.length > 0) {
+        campaignIdToSet = campaignIdNorm;
+      } else {
+        res.status(403).json({ error: 'No perteneces a la campaña seleccionada' });
+        return;
+      }
     }
 
     const characterId = uuidv4();
@@ -161,7 +177,7 @@ export async function createCharacter(req: AuthRequest, res: Response) {
       [gameStatsId, characterId, maxHealth, maxHealth]
     );
 
-    const proficientSkillKeys = new Set<string>(chosenFromClass);
+    const proficientSkillKeys = new Set<string>(requestedSkills);
     if (background?.skillProficiencies) {
       background.skillProficiencies.forEach(name => {
         proficientSkillKeys.add(getSkillKeyFromBackgroundName(name));
@@ -175,7 +191,7 @@ export async function createCharacter(req: AuthRequest, res: Response) {
     }
 
     const charResult = await pool.query(
-      `SELECT id, user_id, name_es, name_en, race_id, subrace_id, class_id, subclass_id, level, experience, background_id, alignment_id, personality_ideals, personality_bonds, personality_flaws, created_at, updated_at FROM characters WHERE id = $1`,
+      `SELECT id, user_id, campaign_id, name_es, name_en, race_id, subrace_id, class_id, subclass_id, level, experience, background_id, alignment_id, personality_ideals, personality_bonds, personality_flaws, created_at, updated_at FROM characters WHERE id = $1`,
       [characterId]
     );
     const abilResult = await pool.query(
@@ -227,9 +243,9 @@ export async function getCharacter(req: AuthRequest, res: Response) {
     const { id } = req.params;
 
     const charResult = await pool.query(
-      `SELECT id, user_id, name_es, name_en, race_id, subrace_id, class_id, subclass_id, level, experience, background_id, alignment_id, personality_ideals, personality_bonds, personality_flaws, created_at, updated_at
-       FROM characters WHERE id = $1 AND user_id = $2`,
-      [id, userId]
+      `SELECT id, user_id, campaign_id, name_es, name_en, race_id, subrace_id, class_id, subclass_id, level, experience, background_id, alignment_id, personality_ideals, personality_bonds, personality_flaws, created_at, updated_at
+       FROM characters WHERE id = $1`,
+      [id]
     );
 
     if (charResult.rows.length === 0) {
@@ -238,6 +254,21 @@ export async function getCharacter(req: AuthRequest, res: Response) {
     }
 
     const character = charResult.rows[0] as CharacterRow;
+    const isOwner = character.user_id === userId;
+    if (!isOwner) {
+      if (!character.campaign_id) {
+        res.status(403).json({ error: 'No tienes acceso a este personaje' });
+        return;
+      }
+      const masterCheck = await pool.query(
+        `SELECT 1 FROM campaign_members WHERE campaign_id = $1 AND user_id = $2 AND role = 'master'`,
+        [character.campaign_id, userId]
+      );
+      if (masterCheck.rows.length === 0) {
+        res.status(403).json({ error: 'No tienes acceso a este personaje' });
+        return;
+      }
+    }
 
     const [abilResult, statsResult, skillsResult, conditionsResult, inventoryResult] = await Promise.all([
       pool.query(
@@ -260,15 +291,23 @@ export async function getCharacter(req: AuthRequest, res: Response) {
       return;
     }
 
-    const race = races.find(r => r.id === character.race_id);
-    const charClass = classes.find(c => c.id === character.class_id);
+    const race = character.campaign_id
+      ? await contentService.findRaceById(character.race_id, character.campaign_id, userId)
+      : races.find(r => r.id === character.race_id) ?? null;
+    const charClass = character.campaign_id
+      ? await contentService.findClassById(character.class_id, character.campaign_id, userId)
+      : classes.find(c => c.id === character.class_id) ?? null;
     if (!race || !charClass) {
       res.status(500).json({ error: 'Raza o clase del personaje no encontrada en datos' });
       return;
     }
 
     const background = character.background_id
-      ? backgrounds.find(b => b.id === character.background_id) ?? null
+      ? (
+          character.campaign_id
+            ? await contentService.findBackgroundById(character.background_id, character.campaign_id, userId)
+            : backgrounds.find(b => b.id === character.background_id) ?? null
+        )
       : null;
     const alignment = character.alignment_id
       ? alignments.find(a => a.id === character.alignment_id) ?? null

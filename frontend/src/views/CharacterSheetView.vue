@@ -111,55 +111,59 @@ function back() {
   <div class="page">
     <AppHeader>
       <template #actions>
-        <button type="button" class="btn ghost" @click="back">← Volver</button>
+        <button type="button" class="btn btn-ghost" @click="back">← Volver</button>
       </template>
     </AppHeader>
 
-    <main class="main">
+    <main class="main sheet-main">
       <div v-if="loading" class="loading-wrap">
         <div class="loader"></div>
         <p>Cargando ficha...</p>
       </div>
-      <p v-else-if="error" class="error">{{ error }}</p>
+      <p v-else-if="error" class="error-msg">{{ error }}</p>
       <div v-else-if="sheet" class="sheet animate-fade-in">
-        <div class="sheet-header parchment-panel">
+        <!-- Cabecera: nombre y acciones -->
+        <header class="sheet-header dark-card">
           <div class="sheet-title-block">
             <template v-if="!editingName">
-              <h2>{{ displayName }}</h2>
-              <button type="button" class="btn-edit-name" @click="startEditName" title="Editar nombre">✎</button>
+              <h2 class="sheet-name">{{ displayName }}</h2>
+              <button type="button" class="btn-icon" @click="startEditName" title="Editar nombre" aria-label="Editar nombre">✎</button>
             </template>
             <template v-else>
               <div class="edit-name-fields">
                 <input v-model="editNameEs" type="text" class="edit-name-input" placeholder="Nombre (español)" />
                 <input v-model="editNameEn" type="text" class="edit-name-input" placeholder="Nombre (inglés, opcional)" />
                 <div class="edit-name-actions">
-                  <button type="button" class="btn ghost btn-sm" :disabled="savingName" @click="cancelEditName">Cancelar</button>
-                  <button type="button" class="btn primary btn-sm" :disabled="savingName || !editNameEs.trim()" @click="saveName">
+                  <button type="button" class="btn btn-ghost btn-sm" :disabled="savingName" @click="cancelEditName">Cancelar</button>
+                  <button type="button" class="btn btn-primary btn-sm" :disabled="savingName || !editNameEs.trim()" @click="saveName">
                     {{ savingName ? 'Guardando…' : 'Guardar' }}
                   </button>
                 </div>
               </div>
             </template>
-            <p class="meta">
+            <p class="sheet-meta">
               Nivel {{ sheet.level }} · {{ (sheet.raceNameEs as string) }} · {{ (sheet.classNameEs as string) }}
               <span v-if="sheet.backgroundNameEs"> · {{ sheet.backgroundNameEs }}</span>
             </p>
           </div>
           <div class="sheet-header-actions">
-            <router-link :to="`/personajes/${sheet.id}/partida`" class="btn primary">En partida</router-link>
+            <router-link :to="`/personajes/${sheet.id}/partida`" class="btn btn-primary">En partida</router-link>
             <button
               type="button"
-              class="btn danger-outline"
+              class="btn btn-danger"
               :disabled="deleting"
               @click="confirmDelete"
             >
               {{ deleting ? '…' : 'Eliminar personaje' }}
             </button>
           </div>
-        </div>
+        </header>
+
+        <hr class="runic-separator" />
+
         <div class="stats-grid">
-          <div class="stat-block parchment-panel">
-            <h3>Características</h3>
+          <div class="stat-block dark-card">
+            <h3 class="section-title">Características</h3>
             <div class="abilities-grid" v-if="sheet.abilities && sheet.abilityModifiers">
               <div
                 v-for="key in abilityKeys"
@@ -167,21 +171,21 @@ function back() {
                 class="ability-card"
               >
                 <span class="ability-name">{{ abilityLabel(key) }}</span>
-                <span class="ability-value">{{ (sheet.abilities as Record<string, number>)[key] }}</span>
-                <span class="ability-mod">({{ formatModifier((sheet.abilityModifiers as Record<string, number>)[key] ?? 0) }})</span>
+                <span class="ability-value font-data">{{ (sheet.abilities as Record<string, number>)[key] }}</span>
+                <span class="ability-mod font-data">{{ formatModifier((sheet.abilityModifiers as Record<string, number>)[key] ?? 0) }}</span>
               </div>
             </div>
           </div>
-          <div class="stat-block parchment-panel">
-            <h3>Combate y recursos</h3>
+          <div class="stat-block dark-card">
+            <h3 class="section-title">Combate y recursos</h3>
             <dl class="combat-list">
-              <dt>CA</dt><dd>{{ sheet.armorClass }}</dd>
-              <dt>Iniciativa</dt><dd>{{ formatModifier(sheet.initiative as number) }}</dd>
-              <dt>Velocidad</dt><dd>{{ sheet.speed }} pies</dd>
-              <dt>PG</dt><dd>{{ (sheet.health as { current: number })?.current }} / {{ (sheet.health as { maximum: number })?.maximum }}</dd>
-              <dt>Oro</dt><dd>{{ sheet.gold }}</dd>
+              <dt>CA</dt><dd class="font-data">{{ sheet.armorClass }}</dd>
+              <dt>Iniciativa</dt><dd class="font-data">{{ formatModifier(sheet.initiative as number) }}</dd>
+              <dt>Velocidad</dt><dd class="font-data">{{ sheet.speed }} pies</dd>
+              <dt>PG</dt><dd class="font-data">{{ (sheet.health as { current: number })?.current }} / {{ (sheet.health as { maximum: number })?.maximum }}</dd>
+              <dt>Oro</dt><dd class="font-data">{{ sheet.gold }}</dd>
               <template v-if="sheet.proficiencyBonus != null">
-                <dt>Bonif. competencia</dt><dd>{{ formatModifier(sheet.proficiencyBonus as number) }}</dd>
+                <dt>Bonif. competencia</dt><dd class="font-data">{{ formatModifier(sheet.proficiencyBonus as number) }}</dd>
               </template>
             </dl>
           </div>
@@ -189,9 +193,9 @@ function back() {
 
         <section
           v-if="sheet.personality && ((sheet.personality as { ideals?: string }).ideals || (sheet.personality as { bonds?: string }).bonds || (sheet.personality as { flaws?: string }).flaws)"
-          class="panel parchment-panel personality"
+          class="panel dark-card personality"
         >
-          <h3>Personalidad</h3>
+          <h3 class="section-title">Personalidad</h3>
           <div class="personality-grid">
             <div v-if="(sheet.personality as { ideals?: string }).ideals" class="personality-item">
               <strong>Ideales</strong>
@@ -213,240 +217,269 @@ function back() {
 </template>
 
 <style scoped>
-.page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-.btn.ghost {
-  background: transparent;
-  color: var(--parchment-dark);
-  border: 1px solid transparent;
-  padding: 0.5rem 0.75rem;
-  cursor: pointer;
-  font-size: 0.95rem;
-}
-.btn.ghost:hover {
-  color: var(--parchment);
-  border-color: var(--border-parchment);
-}
-.main {
-  flex: 1;
+.sheet-main {
   padding: 1.5rem;
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
 }
+
+.loading-wrap {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--text-muted);
+}
+
+.loader {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 1rem;
+  border: 2px solid var(--arcane-blue-dim);
+  border-top-color: var(--arcane-blue);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-msg {
+  color: #f87171;
+  padding: 1rem 1.25rem;
+  background: rgba(248, 113, 113, 0.08);
+  border-radius: 6px;
+  border: 1px solid rgba(248, 113, 113, 0.25);
+}
+
+/* Cabecera */
 .sheet-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding: 1.25rem 1.5rem;
-  box-shadow: var(--shadow-paper);
+  margin-bottom: 0;
+  padding: 1.5rem 1.75rem;
   flex-wrap: wrap;
 }
+
 .sheet-title-block {
   flex: 1;
   min-width: 0;
 }
-.sheet-title-block h2 {
+
+.sheet-name {
+  font-family: var(--font-title);
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-primary);
+  margin: 0 0.35rem 0 0;
   display: inline;
-  margin-right: 0.5rem;
 }
-.btn-edit-name {
-  background: none;
-  border: none;
-  color: var(--ink-muted);
+
+.btn-icon {
+  background: transparent;
+  border: 1px solid var(--arcane-blue-dim);
+  color: var(--arcane-blue);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
   cursor: pointer;
   font-size: 1rem;
-  padding: 0.2rem;
-  vertical-align: middle;
+  transition: box-shadow var(--ease-mist), border-color var(--ease-mist);
 }
-.btn-edit-name:hover {
-  color: var(--accent-gold);
+
+.btn-icon:hover {
+  box-shadow: var(--glow-arcane);
+  border-color: var(--arcane-blue);
 }
+
 .edit-name-fields {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
+
 .edit-name-input {
-  padding: 0.4rem 0.6rem;
-  border: 1px solid var(--border-parchment);
-  border-radius: 4px;
-  font-size: 1rem;
+  padding: 0.5rem 0.75rem;
   max-width: 280px;
+  font-size: 1rem;
 }
+
 .edit-name-actions {
   display: flex;
   gap: 0.5rem;
 }
+
+.sheet-meta {
+  color: var(--text-muted);
+  margin: 0.5rem 0 0 0;
+  font-size: 0.95rem;
+}
+
 .sheet-header-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.6rem;
   align-items: center;
   flex-wrap: wrap;
 }
-.btn.danger-outline {
-  background: transparent;
-  color: #b71c1c;
-  border: 1px solid rgba(183, 28, 28, 0.5);
+
+/* Botones */
+.btn {
   padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: box-shadow var(--ease-mist), transform var(--ease-pulse);
+}
+
+.btn:hover {
+  box-shadow: var(--glow-arcane);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, rgba(181, 123, 238, 0.35) 0%, rgba(181, 123, 238, 0.2) 100%);
+  color: var(--text-primary);
+  border-color: var(--arcane-blue-dim);
+}
+
+.btn-primary:hover:not(:disabled) {
+  box-shadow: var(--glow-arcane-hover);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: transparent;
+}
+
+.btn-ghost:hover {
+  color: var(--text-primary);
+  border-color: var(--arcane-blue-dim);
+}
+
+.btn-danger {
+  background: transparent;
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+.btn-danger:hover:not(:disabled) {
+  box-shadow: var(--glow-fire);
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.btn-sm {
+  padding: 0.35rem 0.75rem;
   font-size: 0.9rem;
 }
-.btn.danger-outline:hover:not(:disabled) {
-  background: rgba(183, 28, 28, 0.1);
-}
-.sheet-header .btn {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  text-decoration: none;
-  background: linear-gradient(180deg, var(--accent-gold-light) 0%, var(--accent-gold) 100%);
-  color: var(--ink);
-  border: 1px solid var(--parchment-shadow);
-  box-shadow: 0 2px 8px rgba(44, 24, 16, 0.2);
-  white-space: nowrap;
-}
-.sheet-header .btn:hover {
-  box-shadow: 0 4px 14px var(--accent-glow);
-}
-.sheet h2 {
-  font-family: var(--font-title);
-  margin: 0 0 0.25rem 0;
-  font-size: 1.5rem;
-  color: var(--ink);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-}
-.meta {
-  color: var(--ink-muted);
-  margin: 0;
-  font-size: 0.95rem;
-}
+
+/* Grid de estadísticas */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 1.25rem;
   margin-bottom: 1.5rem;
 }
+
 .stat-block {
-  padding: 1.25rem;
-  box-shadow: var(--shadow-paper);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  padding: 1.25rem 1.5rem;
+  transition: box-shadow var(--ease-mist), transform var(--ease-mist);
 }
+
 .stat-block:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-float);
+  box-shadow: var(--glow-arcane-hover);
 }
-.stat-block h3 {
-  font-family: var(--font-title);
-  margin: 0 0 1rem 0;
-  font-size: 1rem;
-  color: var(--ink);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border-parchment);
-}
+
 .abilities-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.75rem;
 }
+
 .ability-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.4);
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 6px;
-  border: 1px solid var(--border-parchment);
+  border: 1px solid rgba(155, 114, 212, 0.14);
+  transition: box-shadow var(--ease-mist), border-color var(--ease-mist);
 }
+
+.ability-card:hover {
+  box-shadow: 0 0 16px rgba(155, 114, 212, 0.2);
+  border-color: rgba(155, 114, 212, 0.3);
+}
+
 .ability-name {
-  font-size: 0.8rem;
-  color: var(--ink-muted);
+  font-size: 0.75rem;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
+
 .ability-value {
-  font-weight: 700;
-  font-size: 1.35rem;
-  color: var(--ink);
+  font-weight: 600;
+  font-size: 1.4rem;
+  color: var(--text-primary);
+  margin: 0.15rem 0;
 }
+
 .ability-mod {
   font-size: 0.9rem;
-  color: var(--accent-gold);
-  font-weight: 600;
+  color: var(--arcane-gold);
+  font-weight: 500;
 }
+
 .combat-list {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 0.35rem 1.5rem;
+  gap: 0.4rem 1.5rem;
   margin: 0;
   font-size: 0.95rem;
 }
+
 .combat-list dt {
-  color: var(--ink-muted);
-  font-weight: 600;
+  color: var(--text-muted);
+  font-weight: 500;
 }
+
 .combat-list dd {
   margin: 0;
-  color: var(--ink);
+  color: var(--text-primary);
 }
+
+/* Personalidad */
 .panel.personality {
-  margin-top: 0;
+  padding: 1.25rem 1.5rem;
 }
-.personality h3 {
-  font-family: var(--font-title);
-  margin: 0 0 1rem 0;
-  font-size: 1rem;
-  color: var(--ink);
-  font-weight: 600;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border-parchment);
-}
+
 .personality-grid {
   display: grid;
   gap: 1rem;
 }
+
 .personality-item strong {
   display: block;
-  font-size: 0.85rem;
-  color: var(--accent-gold);
+  font-size: 0.8rem;
+  color: var(--arcane-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   margin-bottom: 0.25rem;
 }
+
 .personality-item p {
   margin: 0;
   font-size: 0.95rem;
-  color: var(--ink);
+  color: var(--text-primary);
   white-space: pre-wrap;
-}
-.loading-wrap {
-  text-align: center;
-  padding: 2rem;
-  color: var(--ink-muted);
-}
-.loader {
-  width: 40px;
-  height: 40px;
-  margin: 0 auto 0.75rem;
-  border: 3px solid var(--parchment-shadow);
-  border-top-color: var(--accent-gold);
-  border-radius: 50%;
-  animation: spin 0.9s linear infinite;
-}
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-.error {
-  color: #b71c1c;
-  padding: 1rem;
-  background: rgba(183, 28, 28, 0.08);
-  border-radius: 4px;
-  border: 1px solid rgba(183, 28, 28, 0.2);
 }
 </style>

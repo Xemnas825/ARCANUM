@@ -54,6 +54,7 @@ function mapHomebrewClass(row: {
   primary_ability: string;
   saving_throws: string[];
   skill_options: string[];
+  skill_choices_count?: number | null;
   subclasses: Subclass[] | unknown;
 }): ClassType {
   const savingThrows = Array.isArray(row.saving_throws) ? row.saving_throws : [];
@@ -72,6 +73,7 @@ function mapHomebrewClass(row: {
     primaryAbility: primaryAbility as ClassType['primaryAbility'],
     savingThrows,
     skillOptions,
+    skillChoicesCount: typeof row.skill_choices_count === 'number' ? row.skill_choices_count : undefined,
     subclasses,
   };
 }
@@ -254,7 +256,7 @@ export async function getClasses(campaignId: string | null, userId: number): Pro
     const isMember = await isCampaignMember(campaignId, userId);
     if (isMember) {
       const homebrew = await pool.query(
-        `SELECT id, name_es, name_en, description_es, description_en, hit_dice, primary_ability, saving_throws, skill_options, subclasses FROM homebrew_classes WHERE campaign_id = $1`,
+        `SELECT id, name_es, name_en, description_es, description_en, hit_dice, primary_ability, saving_throws, skill_options, skill_choices_count, subclasses FROM homebrew_classes WHERE campaign_id = $1`,
         [campaignId]
       );
       for (const row of homebrew.rows) {
@@ -269,6 +271,7 @@ export async function getClasses(campaignId: string | null, userId: number): Pro
           primary_ability: (r.primary_ability as string) ?? 'strength',
           saving_throws: (Array.isArray(r.saving_throws) ? r.saving_throws : []) as string[],
           skill_options: (Array.isArray(r.skill_options) ? r.skill_options : []) as string[],
+          skill_choices_count: typeof r.skill_choices_count === 'number' ? r.skill_choices_count : null,
           subclasses: (Array.isArray(r.subclasses) ? r.subclasses : []) as Subclass[],
         }));
       }
@@ -407,7 +410,7 @@ export async function findClassById(classId: string, campaignId: string | null, 
   const isMember = await isCampaignMember(campaignId, userId);
   if (!isMember) return null;
   const result = await pool.query(
-    `SELECT id, name_es, name_en, description_es, description_en, hit_dice, primary_ability, saving_throws, skill_options, subclasses FROM homebrew_classes WHERE campaign_id = $1 AND id = $2`,
+    `SELECT id, name_es, name_en, description_es, description_en, hit_dice, primary_ability, saving_throws, skill_options, skill_choices_count, subclasses FROM homebrew_classes WHERE campaign_id = $1 AND id = $2`,
     [campaignId, classId]
   );
   if (result.rows.length === 0) return null;
@@ -422,6 +425,7 @@ export async function findClassById(classId: string, campaignId: string | null, 
     primary_ability: (r.primary_ability as string) ?? 'strength',
     saving_throws: (Array.isArray(r.saving_throws) ? r.saving_throws : []) as string[],
     skill_options: (Array.isArray(r.skill_options) ? r.skill_options : []) as string[],
+    skill_choices_count: typeof r.skill_choices_count === 'number' ? r.skill_choices_count : null,
     subclasses: (Array.isArray(r.subclasses) ? r.subclasses : []) as Subclass[],
   });
 }

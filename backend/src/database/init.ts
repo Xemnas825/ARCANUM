@@ -72,6 +72,34 @@ export async function initializeDatabase() {
     `);
     console.log('✓ Tabla campaign_members creada');
 
+    // Invitaciones por enlace/token para unirse a campañas
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS campaign_invites (
+        token UUID PRIMARY KEY,
+        campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+        created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        expires_at TIMESTAMP NOT NULL,
+        revoked BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('✓ Tabla campaign_invites creada');
+
+    // Notificaciones in-app por usuario
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id UUID PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        type VARCHAR(100) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        data JSONB NOT NULL DEFAULT '{}',
+        read_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('✓ Tabla notifications creada');
+
     // Tabla de personajes
     await pool.query(`
       CREATE TABLE IF NOT EXISTS characters (
@@ -213,11 +241,15 @@ export async function initializeDatabase() {
         primary_ability VARCHAR(20) NOT NULL,
         saving_throws JSONB DEFAULT '[]',
         skill_options JSONB DEFAULT '[]',
+        skill_choices_count INT DEFAULT 2,
         subclasses JSONB DEFAULT '[]',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    await pool.query(`
+      ALTER TABLE homebrew_classes ADD COLUMN IF NOT EXISTS skill_choices_count INT DEFAULT 2;
+    `).catch(() => {});
     await pool.query(`
       CREATE TABLE IF NOT EXISTS homebrew_spells (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -308,6 +340,10 @@ export async function initializeDatabase() {
       CREATE INDEX IF NOT EXISTS idx_campaigns_master_user_id ON campaigns(master_user_id);
       CREATE INDEX IF NOT EXISTS idx_campaign_members_campaign_id ON campaign_members(campaign_id);
       CREATE INDEX IF NOT EXISTS idx_campaign_members_user_id ON campaign_members(user_id);
+      CREATE INDEX IF NOT EXISTS idx_campaign_invites_campaign_id ON campaign_invites(campaign_id);
+      CREATE INDEX IF NOT EXISTS idx_campaign_invites_expires_at ON campaign_invites(expires_at);
+      CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+      CREATE INDEX IF NOT EXISTS idx_notifications_read_at ON notifications(read_at);
       CREATE INDEX IF NOT EXISTS idx_game_stats_character_id ON game_stats(character_id);
       CREATE INDEX IF NOT EXISTS idx_character_conditions_character_id ON character_conditions(character_id);
       CREATE INDEX IF NOT EXISTS idx_character_inventory_character_id ON character_inventory(character_id);

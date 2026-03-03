@@ -56,6 +56,18 @@ const router = createRouter({
       component: () => import('../views/PlaySessionView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/hechizos',
+      name: 'Hechizos',
+      component: () => import('../views/SpellBrowserView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/invitacion/:token',
+      name: 'InvitacionCampana',
+      component: () => import('../views/InviteJoinView.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 });
 
@@ -63,7 +75,7 @@ router.beforeEach((to, _from, next) => {
   const auth = useAuthStore();
   auth.initFromStorage();
   if (to.meta.requiresAuth && !auth.isLoggedIn) {
-    next({ name: 'Login' });
+    next({ name: 'Login', query: { redirect: to.fullPath } });
     return;
   }
   if (to.meta.guest && auth.isLoggedIn) {

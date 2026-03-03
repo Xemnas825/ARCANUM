@@ -1,131 +1,333 @@
-/* ===== ARCANUM — Tema pergamino y fantasía ===== */
+/* ================================================================
+   ARCANUM — Sistema de diseño "Brasa y Penumbra"
+   Paleta: Piedra cálida oscura · Ámbar brasa · Oro bruñido · Violeta solo en magia
+   ================================================================ */
+
+/* ——— Tokens de diseño ——— */
 :root {
+  /* Tipografía */
   --font-title: 'Cinzel', serif;
-  --font-body: 'Crimson Text', Georgia, serif;
+  --font-body: 'EB Garamond', Georgia, serif;
+  --font-data: 'Outfit', system-ui, sans-serif;
 
-  --parchment: #f2e9d8;
-  --parchment-dark: #e5d9c2;
-  --parchment-shadow: #d4c4a8;
-  --ink: #2c1810;
-  --ink-muted: #4a3728;
-  --accent-gold: #b8860b;
-  --accent-gold-light: #d4a84b;
-  --accent-glow: rgba(184, 134, 11, 0.25);
+  /* Fondo: piedra oscura cálida — como una mazmorra con antorchas */
+  --bg-stone: #0f0d0a;
+  --bg-elevated: #17150f;
+  --bg-card: #1f1c15;
+  --bg-card-hover: #272319;
+  --bg-input: #151209;
 
-  --bg-dark: #1a1510;
-  --bg-study: #221c16;
-  --bg-panel: linear-gradient(180deg, #f5ecd9 0%, #ebe0c8 50%, #e2d5bc 100%);
-  --border-parchment: #c9b896;
-  --border-gold: rgba(184, 134, 11, 0.5);
+  /* Texto: crema cálida — legible, sin frío */
+  --text-primary: #f0e8d8;
+  --text-muted: #9a8970;
+  --text-faint: #5c5040;
 
-  --shadow-paper: 0 2px 8px rgba(44, 24, 16, 0.15), 0 8px 24px rgba(0, 0, 0, 0.2);
-  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.35);
+  /* Acento principal: ámbar brasa (interacción, botones, bordes, foco) */
+  --arcane: #e09848;
+  --arcane-dim: rgba(224, 152, 72, 0.16);
+  --arcane-glow: 0 0 20px rgba(224, 152, 72, 0.24), 0 0 40px rgba(224, 152, 72, 0.07);
+  --arcane-glow-strong: 0 0 26px rgba(224, 152, 72, 0.5), 0 0 56px rgba(224, 152, 72, 0.14);
+
+  /* Dorado bruñido (títulos, runas decorativas, separadores) */
+  --gold: #c9a030;
+  --gold-light: #ddb844;
+  --gold-dim: rgba(201, 160, 48, 0.22);
+  --gold-glow: 0 0 18px rgba(201, 160, 48, 0.38);
+
+  /* Violeta arcano — solo para magia/hechizos, acento secundario puntual */
+  --magic: #9b72d4;
+  --magic-dim: rgba(155, 114, 212, 0.15);
+  --magic-glow: 0 0 16px rgba(155, 114, 212, 0.3);
+
+  /* Naturaleza */
+  --nature: #4ade80;
+  --nature-dim: rgba(74, 222, 128, 0.15);
+
+  /* Peligro/dragón */
+  --danger: #f87171;
+  --danger-dim: rgba(248, 113, 113, 0.12);
+  --danger-glow: 0 0 16px rgba(248, 113, 113, 0.35);
+
+  /* Éxito */
+  --success: #34d399;
+  --success-dim: rgba(52, 211, 153, 0.12);
+
+  /* Bordes */
+  --border-arcane: rgba(224, 152, 72, 0.2);
+  --border-gold: rgba(201, 160, 48, 0.35);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+
+  /* Separadores rúnicos */
+  --runic-line: linear-gradient(90deg,
+    transparent 0%,
+    var(--gold-dim) 15%,
+    rgba(201, 160, 48, 0.55) 50%,
+    var(--gold-dim) 85%,
+    transparent 100%
+  );
+
+  /* Sombras */
+  --shadow-card: 0 2px 14px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.35);
+  --shadow-raised: 0 8px 36px rgba(0,0,0,0.6);
+
+  /* Curvas de animación */
+  --ease-out: 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-quick: 0.15s ease-out;
+
+  /* Alias de compatibilidad */
+  --parchment: var(--text-muted);
+  --parchment-dark: var(--text-primary);
+  --ink: var(--text-primary);
+  --ink-muted: var(--text-muted);
+  --accent-gold: var(--gold);
+  --accent-gold-light: var(--gold-light);
+  --accent-glow: var(--gold-dim);
+  --border-parchment: var(--border-arcane);
+  --shadow-paper: var(--shadow-card);
+  --shadow-float: var(--shadow-raised);
+  --parchment-shadow: var(--border-arcane);
+  --arcane-blue: var(--arcane);
+  --arcane-blue-dim: var(--arcane-dim);
+  --arcane-gold: var(--gold);
+  --arcane-gold-dim: var(--gold-dim);
+  --glow-arcane: var(--arcane-glow);
+  --glow-arcane-hover: var(--arcane-glow-strong);
+  --glow-gold: var(--gold-glow);
+  --glow-fire: var(--danger-glow);
+  --ease-mist: var(--ease-out);
+  --ease-pulse: var(--ease-quick);
+  --bg-stone-elevated: var(--bg-elevated);
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html {
-  scroll-behavior: smooth;
-}
+/* ——— Reset ——— */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
-  min-width: 320px;
   min-height: 100vh;
   font-family: var(--font-body);
   font-size: 1.05rem;
-  line-height: 1.5;
-  color: #2c1810;
-  /* Fondo claro tipo pergamino para que nunca se vea todo negro */
-  background: #e8dfd0;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background-color: var(--bg-stone);
   background-image:
-    radial-gradient(ellipse 100% 60% at 50% 0%, rgba(184, 134, 11, 0.12) 0%, transparent 50%),
-    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L30 60M0 30L60 30' stroke='%23988f7a' stroke-opacity='0.15' stroke-width='0.5' fill='none'/%3E%3C/svg%3E");
+    radial-gradient(ellipse 80% 40% at 50% -5%, rgba(224, 152, 72, 0.07) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 35% at 90% 110%, rgba(201, 160, 48, 0.05) 0%, transparent 50%);
 }
 
-#app {
-  min-height: 100vh;
-}
+#app { min-height: 100vh; }
+.page { min-height: 100vh; display: flex; flex-direction: column; background: transparent; }
+main.main { background: transparent; }
 
-/* Área principal de contenido: siempre fondo claro */
-main.main {
-  background-color: transparent;
-}
-.page {
-  background-color: #e8dfd0;
-}
-
-/* Paneles tipo pergamino: siempre visibles con color sólido de respaldo */
-.parchment-panel {
-  background: linear-gradient(180deg, #f5ecd9 0%, #ebe0c8 50%, #e2d5bc 100%);
-  background-color: #f0e6d4;
-  border: 1px solid #c9b896;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(44, 24, 16, 0.12), 0 8px 24px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  color: #2c1810;
-}
-
-/* Animaciones globales */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeInScale {
-  from { opacity: 0; transform: scale(0.97); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes shimmer {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.85; }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.5s ease forwards;
-}
-
-.animate-fade-in-scale {
-  animation: fadeInScale 0.4s ease forwards;
-}
-
-/* Títulos con estilo fantasía */
-h1, h2, .font-title {
+/* ——— Tipografía ——— */
+h1, h2, h3, .font-title {
   font-family: var(--font-title);
   font-weight: 600;
-  letter-spacing: 0.08em;
-  color: #2c1810;
+  letter-spacing: 0.06em;
+  color: var(--text-primary);
+  line-height: 1.2;
 }
 
-a {
-  color: var(--accent-gold);
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-a:hover {
-  color: var(--accent-gold-light);
+.font-data { font-family: var(--font-data); }
+
+a { color: var(--arcane); text-decoration: none; transition: color var(--ease-quick), text-shadow var(--ease-quick); }
+a:hover { color: #f0b870; text-shadow: 0 0 10px rgba(224,152,72,0.4); }
+
+/* ——— Separadores rúnicos ——— */
+.runic-separator {
+  height: 1px;
+  border: none;
+  background: var(--runic-line);
+  margin: 1.25rem 0;
+  opacity: 0.7;
 }
 
+.section-title {
+  font-family: var(--font-title);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 0 0 0.85rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--gold-dim);
+}
+
+/* ——— Paneles (dark-card + alias parchment-panel) ——— */
+.dark-card,
+.parchment-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-arcane);
+  border-radius: 8px;
+  box-shadow: var(--shadow-card), var(--arcane-glow);
+  color: var(--text-primary);
+  transition: box-shadow var(--ease-out), border-color var(--ease-out), transform var(--ease-out);
+}
+.dark-card:hover,
+.parchment-panel:hover {
+  box-shadow: var(--shadow-raised), var(--arcane-glow-strong);
+  border-color: rgba(224, 152, 72, 0.35);
+}
+
+/* ——— Botones globales ——— */
 button {
   font-family: var(--font-body);
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  border: 1px solid transparent;
+  transition:
+    box-shadow var(--ease-out),
+    transform var(--ease-spring),
+    background var(--ease-quick),
+    border-color var(--ease-quick),
+    filter var(--ease-quick);
 }
-button:hover {
-  transform: translateY(-1px);
+button:focus-visible {
+  outline: 2px solid var(--arcane);
+  outline-offset: 2px;
 }
-button:active {
-  transform: translateY(0);
+button:not(:disabled):active { transform: scale(0.97); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Botón brasa (CTA principal) */
+.btn-arc {
+  background: linear-gradient(135deg, rgba(224, 152, 72, 0.25) 0%, rgba(201, 120, 40, 0.18) 100%);
+  color: var(--text-primary);
+  border-color: rgba(224, 152, 72, 0.42);
+  padding: 0.55rem 1.1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.btn-arc:not(:disabled):hover { box-shadow: var(--arcane-glow-strong); border-color: var(--arcane); }
+
+/* Botón dorado (acción más importante de una vista) */
+.btn-gold {
+  background: linear-gradient(135deg, rgba(201, 162, 39, 0.35) 0%, rgba(201, 162, 39, 0.2) 100%);
+  color: var(--gold-light);
+  border-color: var(--border-gold);
+  padding: 0.55rem 1.1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+.btn-gold:not(:disabled):hover { box-shadow: var(--gold-glow); filter: brightness(1.1); }
+
+/* Botón fantasma */
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: transparent;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.95rem;
+}
+.btn-ghost:not(:disabled):hover { color: var(--gold-light); border-color: var(--border-arcane); }
+
+/* Botón peligro */
+.btn-danger {
+  background: var(--danger-dim);
+  color: var(--danger);
+  border-color: rgba(248, 113, 113, 0.35);
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+.btn-danger:not(:disabled):hover { box-shadow: var(--danger-glow); filter: brightness(1.1); }
+
+/* Variante pequeña */
+.btn-sm { padding: 0.35rem 0.7rem !important; font-size: 0.85rem !important; }
+.btn-lg { padding: 0.75rem 1.75rem !important; font-size: 1.05rem !important; }
+
+/* ——— Inputs & formularios ——— */
+input, select, textarea {
+  font-family: var(--font-data);
+  background: var(--bg-input);
+  border: 1px solid var(--border-arcane);
+  border-radius: 6px;
+  color: var(--text-primary);
+  padding: 0.55rem 0.85rem;
+  font-size: 0.95rem;
+  transition: border-color var(--ease-quick), box-shadow var(--ease-quick);
+}
+input::placeholder, textarea::placeholder { color: var(--text-faint); }
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--arcane);
+  box-shadow: 0 0 0 3px rgba(224, 152, 72, 0.16);
+}
+select { appearance: none; cursor: pointer; }
+
+/* ——— Badges ——— */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  line-height: 1.4;
+}
+.badge-arcane { background: var(--magic-dim); color: var(--magic); border: 1px solid rgba(155,114,212,0.3); }
+.badge-gold   { background: var(--gold-dim); color: var(--gold-light); border: 1px solid var(--border-gold); }
+.badge-nature { background: var(--nature-dim); color: var(--nature); border: 1px solid rgba(74,222,128,0.3); }
+.badge-danger { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(248,113,113,0.3); }
+.badge-ember  { background: var(--arcane-dim); color: var(--arcane); border: 1px solid rgba(224,152,72,0.3); }
+
+/* ——— Loading / Error ——— */
+.loader-wrap { text-align: center; padding: 4rem 2rem; color: var(--text-muted); }
+.loader {
+  width: 40px; height: 40px;
+  margin: 0 auto 1rem;
+  border: 2px solid var(--arcane-dim);
+  border-top-color: var(--arcane);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error-banner {
+  color: var(--danger);
+  background: var(--danger-dim);
+  border: 1px solid rgba(248,113,113,0.25);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+}
+.success-banner {
+  color: var(--success);
+  background: var(--success-dim);
+  border: 1px solid rgba(52,211,153,0.25);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
 }
 
-input, select, textarea {
-  font-family: var(--font-body);
+/* ——— Animaciones: aparición desde la niebla ——— */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.97) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes shimmer {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(224,152,72,0.45); }
+  70%  { box-shadow: 0 0 0 8px rgba(224,152,72,0); }
+  100% { box-shadow: 0 0 0 0 rgba(224,152,72,0); }
+}
+
+.animate-fade-in { animation: fadeIn 0.5s var(--ease-out) both; }
+.animate-fade-in-scale { animation: fadeInScale 0.45s var(--ease-out) both; }
+.animate-card-in { animation: cardIn 0.45s var(--ease-out) both; }

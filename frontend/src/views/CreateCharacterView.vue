@@ -39,6 +39,7 @@ const personalityFlaws = ref('');
 
 const selectedRace = ref<CharacterCreationOptionsDto['races'][0] | null>(null);
 const selectedClass = ref<CharacterCreationOptionsDto['classes'][0] | null>(null);
+const selectedSubrace = computed(() => selectedRace.value?.subraces?.find((sr) => sr.id === subraceId.value) ?? null);
 
 const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8];
 const ABILITY_KEYS = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const;
@@ -51,16 +52,79 @@ const ABILITY_NAMES: Record<string, string> = {
   charisma: 'Carisma',
 };
 
+const DRAFT_KEY = 'arcanum_character_creation_draft_v1';
+const hasLoadedDraft = ref(false);
+
+function getRequiredSkillChoices(classItem: CharacterCreationOptionsDto['classes'][0] | null): number {
+  const count = classItem?.skillOptions?.length ?? 0;
+  if (!count) return 0;
+  const explicit = classItem?.skillChoicesCount;
+  if (typeof explicit === 'number' && explicit > 0) return Math.min(explicit, count);
+  return Math.min(2, count);
+}
+
+function abilityModifier(score: number): number {
+  return Math.floor((Number(score) - 10) / 2);
+}
+
+function raceBonusFor(key: typeof ABILITY_KEYS[number]): number {
+  const raceBonus = Number(selectedRace.value?.abilityBonus?.[key] ?? 0);
+  const subraceBonus = Number(selectedSubrace.value?.abilityBonus?.[key] ?? 0);
+  return raceBonus + subraceBonus;
+}
+
+const finalAbilities = computed(() => ({
+  strength: Number(abilities.value.strength) + raceBonusFor('strength'),
+  dexterity: Number(abilities.value.dexterity) + raceBonusFor('dexterity'),
+  constitution: Number(abilities.value.constitution) + raceBonusFor('constitution'),
+  intelligence: Number(abilities.value.intelligence) + raceBonusFor('intelligence'),
+  wisdom: Number(abilities.value.wisdom) + raceBonusFor('wisdom'),
+  charisma: Number(abilities.value.charisma) + raceBonusFor('charisma'),
+}));
+
+const initialHpEstimate = computed(() => {
+  const hitDice = Number(selectedClass.value?.hitDice ?? 8);
+  return Math.max(1, hitDice + abilityModifier(finalAbilities.value.constitution));
+});
+
+const baseAcEstimate = computed(() => 10 + abilityModifier(finalAbilities.value.dexterity));
+
+const raceBonusSummary = computed(() => {
+  return ABILITY_KEYS
+    .map((key) => ({ key, bonus: raceBonusFor(key) }))
+    .filter((x) => x.bonus !== 0)
+    .map((x) => `${x.bonus > 0 ? '+' : ''}${x.bonus} ${ABILITY_NAMES[x.key]}`);
+});
+
 async function loadOptions(campaignIdForOptions: string | null) {
   loading.value = true;
   error.value = '';
   try {
+    const prevRace = raceId.value;
+    const prevClass = classId.value;
+    const prevSubrace = subraceId.value;
+    const prevSubclass = subclassId.value;
+    const prevSkills = [...skillProficiencies.value];
+
     const path = pathWithCampaign('/character-creation-options', campaignIdForOptions || null);
     options.value = await api.get<CharacterCreationOptionsDto>(path);
-    if (options.value?.races?.length) raceId.value = options.value.races[0]?.id ?? '';
-    if (options.value?.classes?.length) classId.value = options.value.classes[0]?.id ?? '';
-    applyStandardArray();
-    updateSelected();
+    if (options.value?.races?.length) {
+      raceId.value = options.value.races.some((r) => r.id === prevRace) ? prevRace : (options.value.races[0]?.id ?? '');
+    }
+    if (options.value?.classes?.length) {
+      classId.value = options.value.classes.some((c) => c.id === prevClass) ? prevClass : (options.value.classes[0]?.id ?? '');
+    }
+    selectedRace.value = options.value?.races.find((r) => r.id === raceId.value) ?? null;
+    selectedClass.value = options.value?.classes.find((c) => c.id === classId.value) ?? null;
+
+    if (selectedRace.value?.subraces?.some((sr) => sr.id === prevSubrace)) subraceId.value = prevSubrace;
+    else subraceId.value = '';
+
+    if (selectedClass.value?.subclasses?.some((sc) => sc.id === prevSubclass)) subclassId.value = prevSubclass;
+    else subclassId.value = '';
+
+    const validSkills = prevSkills.filter((s) => selectedClass.value?.skillOptions?.includes(s));
+    skillProficiencies.value = validSkills.slice(0, getRequiredSkillChoices(selectedClass.value));
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Error al cargar opciones';
   } finally {
@@ -69,7 +133,9 @@ async function loadOptions(campaignIdForOptions: string | null) {
 }
 
 onMounted(async () => {
+  hasLoadedDraft.value = loadDraft();
   campaignsStore.fetchCampaigns();
+  if (!hasLoadedDraft.value) applyStandardArray();
   await loadOptions(campaignId.value || null);
 });
 
@@ -114,7 +180,7 @@ function rollAbilities() {
 
 function toggleSkill(key: string) {
   const list = skillProficiencies.value;
-  const max = 2;
+  const max = requiredSkillChoices.value;
   if (list.includes(key)) {
     skillProficiencies.value = list.filter((k) => k !== key);
   } else if (list.length < max) {
@@ -122,19 +188,39 @@ function toggleSkill(key: string) {
   }
 }
 
+const requiredSkillChoices = computed(() => {
+  return getRequiredSkillChoices(selectedClass.value);
+});
+
+const skillLabelByKey = computed(() => {
+  const catalog = options.value?.skills ?? [];
+  return Object.fromEntries(catalog.map((s) => [s.key, s.nameEs])) as Record<string, string>;
+});
+
+const sortedSkillOptions = computed(() => {
+  const list = selectedClass.value?.skillOptions ?? [];
+  return [...list].sort((a, b) => {
+    const la = skillLabelByKey.value[a] ?? a;
+    const lb = skillLabelByKey.value[b] ?? b;
+    return la.localeCompare(lb);
+  });
+});
+
 const skillHint = computed(() => {
   const opts = selectedClass.value?.skillOptions?.length ?? 0;
   if (opts === 0) return null;
+  const required = requiredSkillChoices.value;
   const n = skillProficiencies.value.length;
-  if (n === 2) return 'Has elegido 2 competencias.';
-  if (n === 1) return 'Puedes elegir 1 competencia más para esta clase.';
-  return 'Recomendado: elige 2 competencias de la lista para esta clase.';
+  if (n === required) return `Has elegido ${required} competencias.`;
+  const remaining = Math.max(0, required - n);
+  if (remaining > 0) return `Elige ${remaining} competencia${remaining === 1 ? '' : 's'} más para esta clase.`;
+  return `Elige ${required} competencias de la lista para esta clase.`;
 });
 
 const canSubmit = computed(() => {
   if (!nameEs.value.trim() || !raceId.value || !classId.value) return false;
   const opts = selectedClass.value?.skillOptions?.length ?? 0;
-  if (opts > 0 && skillProficiencies.value.length < 2) return false;
+  if (opts > 0 && skillProficiencies.value.length !== requiredSkillChoices.value) return false;
   return true;
 });
 
@@ -144,8 +230,8 @@ async function submit() {
     return;
   }
   const opts = selectedClass.value?.skillOptions?.length ?? 0;
-  if (opts > 0 && skillProficiencies.value.length < 2) {
-    error.value = 'Elige 2 competencias de la clase antes de crear el personaje.';
+  if (opts > 0 && skillProficiencies.value.length !== requiredSkillChoices.value) {
+    error.value = `Elige ${requiredSkillChoices.value} competencias de la clase antes de crear el personaje.`;
     return;
   }
   error.value = '';
@@ -177,6 +263,7 @@ async function submit() {
       },
     };
     await api.post('/characters', body);
+    clearDraft();
     router.push('/personajes');
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Error al crear personaje';
@@ -188,6 +275,75 @@ async function submit() {
 function back() {
   router.push('/personajes');
 }
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+}
+
+function saveDraft() {
+  const payload = {
+    nameEs: nameEs.value,
+    nameEn: nameEn.value,
+    raceId: raceId.value,
+    subraceId: subraceId.value,
+    classId: classId.value,
+    subclassId: subclassId.value,
+    backgroundId: backgroundId.value,
+    alignmentId: alignmentId.value,
+    campaignId: campaignId.value,
+    skillProficiencies: skillProficiencies.value,
+    abilityMethod: abilityMethod.value,
+    abilities: abilities.value,
+    diceRolled: diceRolled.value,
+    personalityIdeals: personalityIdeals.value,
+    personalityBonds: personalityBonds.value,
+    personalityFlaws: personalityFlaws.value,
+  };
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
+}
+
+function loadDraft(): boolean {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    nameEs.value = String(parsed.nameEs ?? '');
+    nameEn.value = String(parsed.nameEn ?? '');
+    raceId.value = String(parsed.raceId ?? '');
+    subraceId.value = String(parsed.subraceId ?? '');
+    classId.value = String(parsed.classId ?? '');
+    subclassId.value = String(parsed.subclassId ?? '');
+    backgroundId.value = String(parsed.backgroundId ?? '');
+    alignmentId.value = String(parsed.alignmentId ?? '');
+    campaignId.value = String(parsed.campaignId ?? '');
+    skillProficiencies.value = Array.isArray(parsed.skillProficiencies)
+      ? parsed.skillProficiencies.filter((x): x is string => typeof x === 'string')
+      : [];
+    abilityMethod.value = parsed.abilityMethod === 'dice' ? 'dice' : 'standard';
+    const incoming = (parsed.abilities && typeof parsed.abilities === 'object') ? parsed.abilities as Record<string, unknown> : {};
+    ABILITY_KEYS.forEach((k) => {
+      abilities.value[k] = Number(incoming[k] ?? abilities.value[k]) || 10;
+    });
+    diceRolled.value = Boolean(parsed.diceRolled);
+    personalityIdeals.value = String(parsed.personalityIdeals ?? '');
+    personalityBonds.value = String(parsed.personalityBonds ?? '');
+    personalityFlaws.value = String(parsed.personalityFlaws ?? '');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+watch(
+  [
+    nameEs, nameEn, raceId, subraceId, classId, subclassId, backgroundId, alignmentId, campaignId,
+    skillProficiencies, abilityMethod, abilities, diceRolled, personalityIdeals, personalityBonds, personalityFlaws,
+  ],
+  () => {
+    saveDraft();
+  },
+  { deep: true }
+);
 </script>
 
 <template>
@@ -328,25 +484,57 @@ function back() {
         <!-- 5. Competencias -->
         <section class="panel parchment-panel animate-fade-in" v-if="selectedClass?.skillOptions?.length">
           <h3 class="panel-title">Competencias de la clase</h3>
-          <p class="hint">Elige 2 competencias de la lista (obligatorio para esta clase).</p>
-          <p v-if="skillHint" class="hint skill-hint" :class="{ 'skill-warn': selectedClass?.skillOptions?.length && skillProficiencies.length < 2 }">
+          <p class="hint">Elige {{ requiredSkillChoices }} competencias de la lista (obligatorio para esta clase).</p>
+          <p
+            v-if="skillHint"
+            class="hint skill-hint"
+            :class="{ 'skill-warn': selectedClass?.skillOptions?.length && skillProficiencies.length < requiredSkillChoices }"
+          >
             {{ skillHint }}
           </p>
           <div class="chips">
             <button
-              v-for="key in selectedClass!.skillOptions"
+              v-for="key in sortedSkillOptions"
               :key="key"
               type="button"
               class="chip"
               :class="{ active: skillProficiencies.includes(key) }"
               @click="toggleSkill(key)"
             >
-              {{ key }}
+              {{ skillLabelByKey[key] || key }}
             </button>
           </div>
         </section>
 
+        <!-- 6. Resumen final -->
+        <section class="panel parchment-panel animate-fade-in">
+          <h3 class="panel-title">Resumen previo</h3>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span class="summary-label">HP inicial estimado</span>
+              <strong class="summary-value">{{ initialHpEstimate }}</strong>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">CA base estimada</span>
+              <strong class="summary-value">{{ baseAcEstimate }}</strong>
+            </div>
+            <div class="summary-item summary-wide">
+              <span class="summary-label">Bonos raciales aplicados</span>
+              <p class="summary-text">
+                {{ raceBonusSummary.length ? raceBonusSummary.join(' · ') : 'Sin bonos raciales directos' }}
+              </p>
+            </div>
+            <div class="summary-item summary-wide">
+              <span class="summary-label">Competencias elegidas</span>
+              <p class="summary-text">
+                {{ skillProficiencies.length ? skillProficiencies.map((k) => skillLabelByKey[k] || k).join(', ') : 'Ninguna' }}
+              </p>
+            </div>
+          </div>
+        </section>
+
         <div class="actions">
+          <button type="button" class="btn ghost" @click="clearDraft">Borrar borrador</button>
           <button type="button" class="btn ghost" @click="back">Cancelar</button>
           <button type="submit" class="btn primary" :disabled="sending || !canSubmit">
             {{ sending ? 'Creando...' : 'Crear personaje' }}
@@ -562,6 +750,7 @@ function back() {
   gap: 1rem;
   justify-content: flex-end;
   margin-top: 0.5rem;
+  flex-wrap: wrap;
 }
 .btn {
   padding: 0.6rem 1.25rem;
@@ -600,5 +789,33 @@ function back() {
 }
 .loading-wrap {
   color: var(--ink-muted);
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+.summary-item {
+  border: 1px solid var(--border-parchment);
+  border-radius: 6px;
+  padding: 0.65rem 0.8rem;
+  background: rgba(255, 255, 255, 0.04);
+}
+.summary-wide { grid-column: 1 / -1; }
+.summary-label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+  margin-bottom: 0.25rem;
+}
+.summary-value {
+  font-family: var(--font-title);
+  color: var(--ink);
+}
+.summary-text {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.92rem;
 }
 </style>
