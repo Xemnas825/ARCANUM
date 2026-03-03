@@ -1,20 +1,18 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import { useCampaignStore } from '../stores/campaigns';
+import { pathWithCampaign } from '../stores/campaigns';
 import { api } from '../api/client';
+import type { CharacterCreationOptionsDto } from '../types/api';
+import AppHeader from '../components/AppHeader.vue';
 
 const router = useRouter();
 const auth = useAuthStore();
+const campaignsStore = useCampaignStore();
 
-interface CreationOptions {
-  races: Array<{ id: string; nameEs: string; nameEn: string; subraces?: Array<{ id: string; nameEs: string; nameEn: string }> }>;
-  classes: Array<{ id: string; nameEs: string; nameEn: string; skillOptions: string[]; subclasses: Array<{ id: string; nameEs: string; nameEn: string }> }>;
-  backgrounds: Array<{ id: string; nameEs: string; nameEn: string }>;
-  alignments: Array<{ id: string; nameEs: string; nameEn: string }>;
-}
-
-const options = ref<CreationOptions | null>(null);
+const options = ref<CharacterCreationOptionsDto | null>(null);
 const loading = ref(true);
 const sending = ref(false);
 const error = ref('');
@@ -27,6 +25,7 @@ const classId = ref('');
 const subclassId = ref('');
 const backgroundId = ref('');
 const alignmentId = ref('');
+const campaignId = ref('');
 const skillProficiencies = ref<string[]>([]);
 
 // Estadísticas: método y valores
@@ -38,8 +37,8 @@ const personalityIdeals = ref('');
 const personalityBonds = ref('');
 const personalityFlaws = ref('');
 
-const selectedRace = ref<CreationOptions['races'][0] | null>(null);
-const selectedClass = ref<CreationOptions['classes'][0] | null>(null);
+const selectedRace = ref<CharacterCreationOptionsDto['races'][0] | null>(null);
+const selectedClass = ref<CharacterCreationOptionsDto['classes'][0] | null>(null);
 
 const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8];
 const ABILITY_KEYS = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] as const;
@@ -52,11 +51,14 @@ const ABILITY_NAMES: Record<string, string> = {
   charisma: 'Carisma',
 };
 
-onMounted(async () => {
+async function loadOptions(campaignIdForOptions: string | null) {
+  loading.value = true;
+  error.value = '';
   try {
-    options.value = await api.get<CreationOptions>('/character-creation-options');
-    if (options.value?.races?.length) raceId.value = options.value.races[0].id;
-    if (options.value?.classes?.length) classId.value = options.value.classes[0].id;
+    const path = pathWithCampaign('/character-creation-options', campaignIdForOptions || null);
+    options.value = await api.get<CharacterCreationOptionsDto>(path);
+    if (options.value?.races?.length) raceId.value = options.value.races[0]?.id ?? '';
+    if (options.value?.classes?.length) classId.value = options.value.classes[0]?.id ?? '';
     applyStandardArray();
     updateSelected();
   } catch (e) {
@@ -64,6 +66,15 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
+}
+
+onMounted(async () => {
+  campaignsStore.fetchCampaigns();
+  await loadOptions(campaignId.value || null);
+});
+
+watch(campaignId, async (newId) => {
+  if (options.value) await loadOptions(newId || null);
 });
 
 function updateSelected() {
@@ -80,22 +91,24 @@ function applyStandardArray() {
   diceRolled.value = false;
   const arr = [...STANDARD_ARRAY];
   ABILITY_KEYS.forEach((key, i) => {
-    abilities.value[key] = arr[i];
+    abilities.value[key] = arr[i] ?? 10;
   });
 }
 
 function roll4d6DropLowest(): number {
   const rolls = [1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)];
   rolls.sort((a, b) => b - a);
-  return rolls[0] + rolls[1] + rolls[2];
+  return (rolls[0] ?? 0) + (rolls[1] ?? 0) + (rolls[2] ?? 0);
 }
 
 function rollAbilities() {
   abilityMethod.value = 'dice';
   const values = Array.from({ length: 6 }, () => roll4d6DropLowest());
-  ABILITY_KEYS.forEach((key, i) => {
-    abilities.value[key] = values[i];
-  });
+  for (let i = 0; i < ABILITY_KEYS.length; i++) {
+    const key = ABILITY_KEYS[i];
+    const val = values[i];
+    if (key !== undefined && val !== undefined) abilities.value[key] = val;
+  }
   diceRolled.value = true;
 }
 
@@ -109,9 +122,30 @@ function toggleSkill(key: string) {
   }
 }
 
+const skillHint = computed(() => {
+  const opts = selectedClass.value?.skillOptions?.length ?? 0;
+  if (opts === 0) return null;
+  const n = skillProficiencies.value.length;
+  if (n === 2) return 'Has elegido 2 competencias.';
+  if (n === 1) return 'Puedes elegir 1 competencia más para esta clase.';
+  return 'Recomendado: elige 2 competencias de la lista para esta clase.';
+});
+
+const canSubmit = computed(() => {
+  if (!nameEs.value.trim() || !raceId.value || !classId.value) return false;
+  const opts = selectedClass.value?.skillOptions?.length ?? 0;
+  if (opts > 0 && skillProficiencies.value.length < 2) return false;
+  return true;
+});
+
 async function submit() {
   if (!auth.user || !nameEs.value.trim() || !raceId.value || !classId.value) {
     error.value = 'Nombre, raza y clase son obligatorios';
+    return;
+  }
+  const opts = selectedClass.value?.skillOptions?.length ?? 0;
+  if (opts > 0 && skillProficiencies.value.length < 2) {
+    error.value = 'Elige 2 competencias de la clase antes de crear el personaje.';
     return;
   }
   error.value = '';
@@ -126,6 +160,7 @@ async function submit() {
       subclassId: subclassId.value || undefined,
       backgroundId: backgroundId.value || undefined,
       alignmentId: alignmentId.value || undefined,
+      campaignId: campaignId.value.trim() || undefined,
       skillProficiencies: skillProficiencies.value.length ? skillProficiencies.value : undefined,
       personality: {
         ideals: personalityIdeals.value.trim() || undefined,
@@ -141,7 +176,7 @@ async function submit() {
         charisma: abilities.value.charisma,
       },
     };
-    await api.post('/characters', body, auth.token ?? undefined);
+    await api.post('/characters', body);
     router.push('/personajes');
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Error al crear personaje';
@@ -157,13 +192,11 @@ function back() {
 
 <template>
   <div class="page">
-    <header class="header">
-      <div class="logo">
-        <span class="logo-icon">✦</span>
-        <h1>ARCANUM</h1>
-      </div>
-      <button type="button" class="btn ghost" @click="back">← Volver</button>
-    </header>
+    <AppHeader>
+      <template #actions>
+        <button type="button" class="btn ghost" @click="back">← Volver</button>
+      </template>
+    </AppHeader>
 
     <main class="main">
       <h2 class="title">Nuevo personaje</h2>
@@ -189,6 +222,14 @@ function back() {
               <label>Nombre (inglés)</label>
               <input v-model="nameEn" type="text" placeholder="Opcional" />
             </div>
+          </div>
+          <div v-if="campaignsStore.list.length > 0" class="field">
+            <label>Asociar a campaña</label>
+            <select v-model="campaignId">
+              <option value="">— Sin campaña —</option>
+              <option v-for="c in campaignsStore.list" :key="c.id" :value="c.id">{{ c.name }}</option>
+            </select>
+            <p class="hint">Opcional. Si eliges una campaña, el personaje quedará vinculado a ella.</p>
           </div>
           <div class="row">
             <div class="field">
@@ -287,7 +328,10 @@ function back() {
         <!-- 5. Competencias -->
         <section class="panel parchment-panel animate-fade-in" v-if="selectedClass?.skillOptions?.length">
           <h3 class="panel-title">Competencias de la clase</h3>
-          <p class="hint">Elige hasta 2.</p>
+          <p class="hint">Elige 2 competencias de la lista (obligatorio para esta clase).</p>
+          <p v-if="skillHint" class="hint skill-hint" :class="{ 'skill-warn': selectedClass?.skillOptions?.length && skillProficiencies.length < 2 }">
+            {{ skillHint }}
+          </p>
           <div class="chips">
             <button
               v-for="key in selectedClass!.skillOptions"
@@ -304,7 +348,7 @@ function back() {
 
         <div class="actions">
           <button type="button" class="btn ghost" @click="back">Cancelar</button>
-          <button type="submit" class="btn primary" :disabled="sending">
+          <button type="submit" class="btn primary" :disabled="sending || !canSubmit">
             {{ sending ? 'Creando...' : 'Crear personaje' }}
           </button>
         </div>
@@ -318,32 +362,6 @@ function back() {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.5rem;
-  background: linear-gradient(180deg, rgba(42, 32, 24, 0.98) 0%, rgba(26, 21, 16, 0.99) 100%);
-  border-bottom: 2px solid var(--border-parchment);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-.logo-icon {
-  color: var(--accent-gold);
-  font-size: 1.25rem;
-}
-.header h1 {
-  font-family: var(--font-title);
-  font-size: 1.4rem;
-  margin: 0;
-  letter-spacing: 0.15em;
-  color: var(--accent-gold-light);
-  font-weight: 700;
 }
 .btn.ghost {
   background: transparent;
@@ -460,6 +478,13 @@ function back() {
   font-size: 0.9rem;
   color: var(--ink-muted);
   margin: 0 0 1rem 0;
+}
+.skill-hint {
+  margin-top: -0.5rem;
+}
+.skill-hint.skill-warn {
+  color: var(--accent-gold);
+  font-weight: 500;
 }
 
 .ability-method {

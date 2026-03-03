@@ -4,7 +4,10 @@ Complete D&D 5e character creation and management system with comprehensive game
 
 ## Overview
 
-ARCANUM is a bilingual (Spanish/English) web application for creating and managing D&D 5e characters. It includes a complete backend with TypeScript, Express, and PostgreSQL, providing a REST API with access to extensive D&D 5e game data.
+ARCANUM is a bilingual (Spanish/English) web application for creating and managing D&D 5e characters. It includes:
+
+- **Backend**: TypeScript, Express, PostgreSQL — REST API with D&D 5e data, JWT auth, and character CRUD.
+- **Frontend**: Vue 3, TypeScript, Vite, Pinia, Vue Router — login/register, character list, creation wizard, character sheet, and play session view (HP, gold, spell slots, conditions, inventory).
 
 ## Features
 
@@ -37,11 +40,17 @@ All content available in Spanish and English.
 - **Database**: PostgreSQL
 - **Modules**: ES2020
 
-### Dependencies
+### Backend Dependencies
 - `express`: Web framework
 - `pg`: PostgreSQL client
 - `uuid`: UUID generation
 - `cors`: Cross-origin resource sharing
+- `bcryptjs`, `jsonwebtoken`: Auth
+
+### Frontend (`frontend/`)
+- **Vue 3** + **TypeScript** + **Vite**
+- **Pinia** (state), **Vue Router**
+- Proxy to backend `/api` and `/health` in dev
 
 ## Project Structure
 
@@ -214,16 +223,47 @@ curl -X POST http://localhost:3001/api/characters \
   }'
 ```
 
+## Cómo lanzar la app (solo Docker)
+
+Necesitas **Docker** instalado ([Docker Desktop](https://www.docker.com/products/docker-desktop/) en Mac/Windows).
+
+Desde la raíz del proyecto:
+
+```bash
+docker compose up --build
+```
+
+La primera vez tarda unos minutos (construye frontend + backend). Cuando veas algo como `Servidor ejecutándose en http://localhost:3001`, **abre el navegador en http://localhost:3001**.
+
+No hace falta instalar Node ni PostgreSQL en tu máquina: todo va dentro de Docker.
+
+**Persistencia de datos**: Los datos de PostgreSQL se guardan en un volumen Docker (`postgres_data`). Aunque reinicies con `docker compose down` y vuelvas a subir con `docker compose up`, los usuarios, personajes y campañas se mantienen. Solo se pierden si borras el volumen: `docker compose down -v`.
+
+**Usuario admin permanente**: Al arrancar, la app crea un usuario administrador si no existe:
+- **Email**: `admin@arcanum.local`
+- **Usuario**: `admin`
+- **Contraseña por defecto**: `Admin123!`
+
+Puedes cambiar la contraseña del admin con la variable de entorno `ADMIN_DEFAULT_PASSWORD` (solo aplica la primera vez que se crea el usuario). En Docker: `ADMIN_DEFAULT_PASSWORD=TuContraseña docker compose up --build`.
+
+Para parar: `Ctrl+C` o en otra terminal `docker compose down` (sin `-v` para conservar los datos).
+
+---
+
+### Opción sin Docker (desarrollo local)
+
+1. **PostgreSQL** instalado y base creada (`createdb arcanum_db`). Configura `backend/.env` (copia de `.env.example`).
+2. **Backend**: `cd backend && npm install && npm run dev`.
+3. **Frontend**: en otra terminal, `cd frontend && npm install && npm run dev`. Abre http://localhost:5173.
+
 ## Future Enhancements
 
-- [ ] Frontend (Vue 3 + TypeScript)
 - [ ] Complete spell list (400+ spells)
 - [ ] Extended monsters database
-- [ ] User authentication
 - [ ] Multiclass support
 - [ ] Campaign management
 - [ ] Dice roller integration
 
 ---
 
-**Status**: Core backend complete with 30+ spells, 40+ weapons, complete race/class systems.
+**Status**: Full-stack app with auth, character creation, character sheet, and play session tracking. Backend and frontend operational.

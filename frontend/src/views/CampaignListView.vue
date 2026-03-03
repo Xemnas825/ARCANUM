@@ -2,120 +2,107 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { api } from '../api/client';
+import { useCampaignStore } from '../stores/campaigns';
+import AppHeader from '../components/AppHeader.vue';
 
 const router = useRouter();
 const auth = useAuthStore();
+const campaignsStore = useCampaignStore();
+const deletingId = ref<string | null>(null);
 
-const characters = ref<Array<{ id: string; name_es: string; name_en?: string; class_id: string; race_id: string; level: number }>>([]);
-const loading = ref(true);
-const error = ref('');
-
-onMounted(async () => {
-  if (!auth.user) return;
-  loading.value = true;
-  error.value = '';
-  try {
-    characters.value = await api.get(
-      `/users/${auth.user.id}/characters`,
-      auth.token ?? undefined
-    );
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Error al cargar personajes';
-  } finally {
-    loading.value = false;
-  }
+onMounted(() => {
+  campaignsStore.fetchCampaigns();
 });
 
 function goCreate() {
-  router.push('/personajes/nuevo');
+  router.push('/campanas/nueva');
 }
 
-function goCharacter(id: string) {
-  router.push(`/personajes/${id}`);
+function goCampaign(id: string) {
+  router.push(`/campanas/${id}`);
 }
 
-function goPlay(id: string) {
-  router.push(`/personajes/${id}/partida`);
+async function confirmDelete(id: string, name: string, e: Event) {
+  e.stopPropagation();
+  if (!window.confirm(`¿Eliminar la campaña "${name}"? Se eliminarán también los datos de la campaña. Esta acción no se puede deshacer.`)) return;
+  deletingId.value = id;
+  try {
+    await campaignsStore.deleteCampaign(id);
+  } catch (err) {
+    campaignsStore.error = err instanceof Error ? err.message : 'Error al eliminar';
+  } finally {
+    deletingId.value = null;
+  }
 }
 
 function logout() {
   auth.logout();
   router.push('/login');
 }
-
-const classNames: Record<string, string> = {
-  barbarian: 'Bárbaro', bard: 'Bardo', cleric: 'Clérigo', druid: 'Druida', fighter: 'Guerrero',
-  monk: 'Monje', paladin: 'Paladín', ranger: 'Guardabosques', rogue: 'Pícaro', sorcerer: 'Hechicero',
-  warlock: 'Brujo', wizard: 'Mago', artificer: 'Artífice',
-};
-function className(id: string) {
-  return classNames[id] || id;
-}
 </script>
 
 <template>
   <div class="page">
-    <header class="header">
-      <div class="logo">
-        <span class="logo-icon">✦</span>
-        <h1>ARCANUM</h1>
-      </div>
-      <div class="user">
+    <AppHeader>
+      <template #actions>
         <span class="username">{{ auth.user?.username }}</span>
         <button type="button" class="btn ghost" @click="logout">Salir</button>
-      </div>
-    </header>
+      </template>
+    </AppHeader>
 
     <main class="main">
       <section class="hero parchment-panel">
         <div class="hero-ornament">※</div>
         <div class="hero-content">
-          <h2>Mis personajes</h2>
-          <p class="hero-text">Gestiona tus fichas de D&D 5e y llévalas a la partida.</p>
+          <h2>Mis campañas</h2>
+          <p class="hero-text">Crea campañas como Master e invita jugadores, o únete a partidas como jugador.</p>
           <button type="button" class="btn primary btn-hero" @click="goCreate">
             <span class="btn-icon">+</span>
-            Nuevo personaje
+            Nueva campaña
           </button>
         </div>
         <div class="hero-ornament">※</div>
       </section>
 
-      <p v-if="error" class="error">{{ error }}</p>
+      <p v-if="campaignsStore.error" class="error">{{ campaignsStore.error }}</p>
 
-      <div v-else-if="loading" class="loading-wrap">
+      <div v-else-if="campaignsStore.loading" class="loading-wrap">
         <div class="loader"></div>
-        <p>Cargando personajes...</p>
+        <p>Cargando campañas...</p>
       </div>
 
-      <div v-else-if="characters.length === 0" class="empty parchment-panel">
-        <div class="empty-icon">📜</div>
-        <h3>Aún no tienes personajes</h3>
-        <p>Crea tu primera ficha para empezar a jugar.</p>
-        <button type="button" class="btn primary" @click="goCreate">Crear personaje</button>
+      <div v-else-if="campaignsStore.list.length === 0" class="empty parchment-panel">
+        <div class="empty-icon">⚔</div>
+        <h3>Aún no tienes campañas</h3>
+        <p>Crea una campaña como Master o pide a tu DM que te invite.</p>
+        <button type="button" class="btn primary" @click="goCreate">Crear campaña</button>
       </div>
 
       <ul v-else class="list">
         <li
-          v-for="(c, i) in characters"
+          v-for="(c, i) in campaignsStore.list"
           :key="c.id"
           class="card parchment-panel"
           :style="{ animationDelay: `${i * 0.07}s` }"
-          @click="goCharacter(c.id)"
+          @click="goCampaign(c.id)"
         >
           <div class="card-ribbon"></div>
           <div class="card-body">
-            <span class="name">{{ c.name_es || c.name_en }}</span>
-            <span class="meta">
-              <span class="level">Nivel {{ c.level }}</span>
-              <span class="dot">·</span>
-              <span>{{ className(c.class_id) }}</span>
-              <span class="dot">·</span>
-              <span class="race">{{ c.race_id }}</span>
-            </span>
+            <span class="name">{{ c.name }}</span>
+            <span class="role-badge" :class="c.role">{{ c.role === 'master' ? 'Master' : 'Jugador' }}</span>
+            <p v-if="c.description" class="description">{{ c.description }}</p>
             <div class="card-actions">
-              <button type="button" class="btn card-btn" @click.stop="goCharacter(c.id)">Ficha</button>
-              <button type="button" class="btn card-btn primary" @click.stop="goPlay(c.id)">En partida</button>
+              <button type="button" class="btn card-btn primary" @click.stop="goCampaign(c.id)">Ver campaña</button>
+              <button
+                v-if="c.role === 'master'"
+                type="button"
+                class="btn card-btn danger"
+                :disabled="deletingId === c.id"
+                :aria-label="`Eliminar campaña ${c.name}`"
+                @click.stop="confirmDelete(c.id, c.name, $event)"
+              >
+                {{ deletingId === c.id ? '…' : 'Eliminar' }}
+              </button>
             </div>
           </div>
         </li>
@@ -129,41 +116,6 @@ function className(id: string) {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.5rem;
-  background: linear-gradient(180deg, rgba(42, 32, 24, 0.98) 0%, rgba(26, 21, 16, 0.99) 100%);
-  border-bottom: 2px solid var(--border-parchment);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-.logo-icon {
-  color: var(--accent-gold);
-  font-size: 1.35rem;
-  text-shadow: 0 0 12px var(--accent-glow);
-  animation: shimmer 3s ease-in-out infinite;
-}
-.header h1 {
-  font-family: var(--font-title);
-  font-size: 1.5rem;
-  margin: 0;
-  letter-spacing: 0.2em;
-  color: var(--accent-gold-light);
-  font-weight: 700;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-}
-.user {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
 }
 .username {
   color: var(--parchment-dark);
@@ -196,7 +148,6 @@ function className(id: string) {
   color: var(--parchment);
   border-color: var(--border-parchment);
 }
-
 .main {
   flex: 1;
   padding: 2rem 1.5rem;
@@ -204,7 +155,6 @@ function className(id: string) {
   margin: 0 auto;
   width: 100%;
 }
-
 .hero {
   margin-bottom: 2.5rem;
   padding: 2rem 2.5rem;
@@ -244,7 +194,6 @@ function className(id: string) {
   font-size: 1.2rem;
   line-height: 1;
 }
-
 .loading-wrap {
   text-align: center;
   padding: 3rem;
@@ -263,7 +212,6 @@ function className(id: string) {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-
 .empty {
   text-align: center;
   padding: 3rem 2rem;
@@ -273,7 +221,6 @@ function className(id: string) {
   font-size: 3rem;
   margin-bottom: 1rem;
   opacity: 0.8;
-  filter: grayscale(0.2);
 }
 .empty h3 {
   font-family: var(--font-title);
@@ -287,7 +234,6 @@ function className(id: string) {
   color: var(--ink-muted);
   font-size: 1rem;
 }
-
 .list {
   list-style: none;
   padding: 0;
@@ -315,7 +261,7 @@ function className(id: string) {
 }
 .card:hover {
   transform: translateY(-4px) scale(1.01);
-  box-shadow: var(--shadow-float), 0 0 0 1px var(--accent-gold);
+  box-shadow: var(--shadow-float, 0 8px 24px rgba(0,0,0,0.15)), 0 0 0 1px var(--accent-gold);
 }
 .card-ribbon {
   position: absolute;
@@ -339,23 +285,32 @@ function className(id: string) {
   color: var(--ink);
   letter-spacing: 0.03em;
 }
-.meta {
+.role-badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  align-self: flex-start;
+}
+.role-badge.master {
+  background: rgba(184, 134, 11, 0.2);
+  color: var(--accent-gold);
+  border: 1px solid var(--accent-gold);
+}
+.role-badge.player {
+  background: rgba(44, 24, 16, 0.1);
+  color: var(--ink-muted);
+  border: 1px solid var(--border-parchment);
+}
+.description {
+  margin: 0;
   font-size: 0.95rem;
   color: var(--ink-muted);
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-}
-.level {
-  color: var(--accent-gold);
-  font-weight: 600;
-}
-.dot {
-  opacity: 0.6;
-}
-.race {
-  text-transform: capitalize;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .card-actions {
   display: flex;
@@ -382,6 +337,18 @@ function className(id: string) {
 .card-btn.primary:hover {
   background: linear-gradient(180deg, rgba(184, 134, 11, 0.35) 0%, rgba(184, 134, 11, 0.2) 100%);
   box-shadow: 0 2px 8px var(--accent-glow);
+}
+.card-btn.danger {
+  background: rgba(183, 28, 28, 0.08);
+  color: #b71c1c;
+  border-color: rgba(183, 28, 28, 0.3);
+}
+.card-btn.danger:hover:not(:disabled) {
+  background: rgba(183, 28, 28, 0.15);
+  border-color: #b71c1c;
+}
+.card-btn.danger:disabled {
+  opacity: 0.7;
 }
 .error {
   color: #b71c1c;

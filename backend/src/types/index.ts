@@ -166,6 +166,8 @@ export interface CreateCharacterRequest {
   };
   /** Estadísticas base (antes de raza). Si no se envían, se usan 10 en todas. */
   abilities?: AbilitiesInput;
+  /** ID de campaña opcional: si se envía, el personaje se asocia a esa campaña (el usuario debe ser miembro). */
+  campaignId?: string;
   /** No enviar: el userId se toma del JWT en el backend */
 }
 

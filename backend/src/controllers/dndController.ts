@@ -2,44 +2,14 @@ import { Request, Response } from 'express';
 import {
   races,
   classes,
-  spells,
   weapons,
   armor,
   backgrounds,
   feats,
-  monsters,
   conditions,
   alignments,
   magicItems,
 } from '../data/dnd-data.js';
-
-// ===== OPCIONES PARA CREACIÓN DE PERSONAJE (una sola petición) =====
-export function getCharacterCreationOptions(req: Request, res: Response) {
-  res.json({
-    races,
-    classes,
-    backgrounds,
-    alignments,
-  });
-}
-
-// ===== OBTENER TODAS LAS RAZAS =====
-export function getAllRaces(req: Request, res: Response) {
-  res.json(races);
-}
-
-// ===== OBTENER RAZA POR ID =====
-export function getRaceById(req: Request, res: Response) {
-  const { id } = req.params;
-  const race = races.find((r) => r.id === id);
-  
-  if (!race) {
-    res.status(404).json({ error: 'Raza no encontrada' });
-    return;
-  }
-  
-  res.json(race);
-}
 
 // ===== OBTENER SUBRAZA POR ID =====
 export function getSubraceById(req: Request, res: Response) {
@@ -61,24 +31,6 @@ export function getSubraceById(req: Request, res: Response) {
   res.json(subrace);
 }
 
-// ===== OBTENER TODAS LAS CLASES =====
-export function getAllClasses(req: Request, res: Response) {
-  res.json(classes);
-}
-
-// ===== OBTENER CLASE POR ID =====
-export function getClassById(req: Request, res: Response) {
-  const { id } = req.params;
-  const charClass = classes.find((c) => c.id === id);
-  
-  if (!charClass) {
-    res.status(404).json({ error: 'Clase no encontrada' });
-    return;
-  }
-  
-  res.json(charClass);
-}
-
 // ===== OBTENER SUBCLASE POR ID =====
 export function getSubclassById(req: Request, res: Response) {
   const { classId, subclassId } = req.params;
@@ -97,24 +49,6 @@ export function getSubclassById(req: Request, res: Response) {
   }
   
   res.json(subclass);
-}
-
-// ===== OBTENER TODOS LOS HECHIZOS =====
-export function getAllSpells(req: Request, res: Response) {
-  res.json(spells);
-}
-
-// ===== OBTENER HECHIZO POR ID =====
-export function getSpellById(req: Request, res: Response) {
-  const { id } = req.params;
-  const spell = spells.find((s) => s.id === id);
-  
-  if (!spell) {
-    res.status(404).json({ error: 'Hechizo no encontrado' });
-    return;
-  }
-  
-  res.json(spell);
 }
 
 // ===== OBTENER TODAS LAS ARMAS =====
@@ -187,24 +121,6 @@ export function getFeatById(req: Request, res: Response) {
   }
   
   res.json(feat);
-}
-
-// ===== OBTENER TODOS LOS MONSTRUOS =====
-export function getAllMonsters(req: Request, res: Response) {
-  res.json(monsters);
-}
-
-// ===== OBTENER MONSTRUO POR ID =====
-export function getMonsterById(req: Request, res: Response) {
-  const { id } = req.params;
-  const monster = monsters.find((m) => m.id === id);
-  
-  if (!monster) {
-    res.status(404).json({ error: 'Monstruo no encontrado' });
-    return;
-  }
-  
-  res.json(monster);
 }
 
 // ===== OBTENER TODAS LAS CONDICIONES =====

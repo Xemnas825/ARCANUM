@@ -1,4 +1,4 @@
-import { Spell } from '../types/index.js';
+import type { Spell } from '../types/dnd.js';
 
 export const spells: Spell[] = [
   // ===== NIVEL 0 (Trucos) =====

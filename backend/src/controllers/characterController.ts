@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import pool from '../database/pool.js';
 import { CreateCharacterRequest, UpdateGameStatsRequest } from '../types/index.js';
 import { races, classes, backgrounds, alignments } from '../data/dnd-data.js';
+import * as contentService from '../services/contentService.js';
 import { getSkillKeyFromBackgroundName } from '../constants/skills.js';
 import { buildCharacterSheet, type CharacterRow, type AbilitiesRow, type GameStatsRow } from '../services/characterSheetService.js';
 import type { AuthRequest } from '../middleware/auth.js';
@@ -27,6 +28,7 @@ export async function createCharacter(req: AuthRequest, res: Response) {
       skillProficiencies = [],
       personality,
       abilities: abilitiesInput,
+      campaignId,
     } = req.body as CreateCharacterRequest;
 
     if (!nameEs || !raceId || !classId) {
@@ -34,8 +36,14 @@ export async function createCharacter(req: AuthRequest, res: Response) {
       return;
     }
 
-    const race = races.find(r => r.id === raceId);
-    const charClass = classes.find(c => c.id === classId);
+    const campaignIdNorm = campaignId && typeof campaignId === 'string' ? campaignId : null;
+
+    const race = campaignIdNorm
+      ? await contentService.findRaceById(raceId, campaignIdNorm, userId)
+      : races.find(r => r.id === raceId) ?? null;
+    const charClass = campaignIdNorm
+      ? await contentService.findClassById(classId, campaignIdNorm, userId)
+      : classes.find(c => c.id === classId) ?? null;
     if (!race || !charClass) {
       res.status(400).json({ error: 'Raza o clase inválida' });
       return;
@@ -50,7 +58,11 @@ export async function createCharacter(req: AuthRequest, res: Response) {
       return;
     }
 
-    const background = backgroundId ? backgrounds.find(b => b.id === backgroundId) ?? null : null;
+    const background = backgroundId
+      ? (campaignIdNorm
+          ? await contentService.findBackgroundById(backgroundId, campaignIdNorm, userId)
+          : backgrounds.find(b => b.id === backgroundId) ?? null)
+      : null;
     const alignment = alignmentId ? alignments.find(a => a.id === alignmentId) ?? null : null;
     if (backgroundId && !background) {
       res.status(400).json({ error: 'Trasfondo inválido' });
@@ -71,6 +83,15 @@ export async function createCharacter(req: AuthRequest, res: Response) {
     if (chosenFromClass.some(k => !classSkillOptions.includes(k))) {
       res.status(400).json({ error: 'Alguna competencia elegida no pertenece a las opciones de tu clase' });
       return;
+    }
+
+    let campaignIdToSet: string | null = null;
+    if (campaignIdNorm) {
+      const memberCheck = await pool.query(
+        `SELECT 1 FROM campaign_members WHERE campaign_id = $1 AND user_id = $2`,
+        [campaignIdNorm, userId]
+      );
+      if (memberCheck.rows.length > 0) campaignIdToSet = campaignIdNorm;
     }
 
     const characterId = uuidv4();
@@ -108,11 +129,12 @@ export async function createCharacter(req: AuthRequest, res: Response) {
     const maxHealth = Math.max(1, charClass.hitDice + constitutionModifier);
 
     await pool.query(
-      `INSERT INTO characters (id, user_id, name_es, name_en, race_id, subrace_id, class_id, subclass_id, level, experience, background_id, alignment_id, personality_ideals, personality_bonds, personality_flaws)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 1, 0, $9, $10, $11, $12, $13)`,
+      `INSERT INTO characters (id, user_id, campaign_id, name_es, name_en, race_id, subrace_id, class_id, subclass_id, level, experience, background_id, alignment_id, personality_ideals, personality_bonds, personality_flaws)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 1, 0, $10, $11, $12, $13, $14)`,
       [
         characterId,
         userId,
+        campaignIdToSet,
         nameEs,
         nameEn || null,
         raceId,
@@ -294,7 +316,7 @@ export async function getUserCharacters(req: AuthRequest, res: Response) {
     }
 
     const result = await pool.query(
-      `SELECT id, name_es, name_en, race_id, subrace_id, class_id, subclass_id, level, experience, created_at
+      `SELECT id, name_es, name_en, race_id, subrace_id, class_id, subclass_id, level, experience, campaign_id, created_at
        FROM characters WHERE user_id = $1 ORDER BY updated_at DESC`,
       [authUserId]
     );
@@ -577,6 +599,81 @@ export async function deleteInventoryItem(req: AuthRequest, res: Response) {
   } catch (error) {
     console.error('Error eliminando objeto:', error);
     res.status(500).json({ error: 'Error al eliminar objeto' });
+  }
+}
+
+// ===== ACTUALIZAR DATOS BÁSICOS DEL PERSONAJE =====
+export async function updateCharacter(req: AuthRequest, res: Response) {
+  try {
+    const authUserId = req.userId;
+    if (authUserId == null) {
+      res.status(401).json({ error: 'No autenticado' });
+      return;
+    }
+    const { id } = req.params;
+    const body = req.body as {
+      nameEs?: string;
+      nameEn?: string | null;
+      personality?: { ideals?: string | null; bonds?: string | null; flaws?: string | null };
+    };
+
+    const owner = await pool.query(
+      `SELECT id FROM characters WHERE id = $1 AND user_id = $2`,
+      [id, authUserId]
+    );
+    if (owner.rows.length === 0) {
+      res.status(404).json({ error: 'Personaje no encontrado' });
+      return;
+    }
+
+    const updates: string[] = [];
+    const values: unknown[] = [];
+    let p = 1;
+
+    if (body.nameEs !== undefined) {
+      const nameEs = typeof body.nameEs === 'string' ? body.nameEs.trim() : '';
+      if (!nameEs) {
+        res.status(400).json({ error: 'El nombre en español no puede estar vacío' });
+        return;
+      }
+      updates.push(`name_es = $${p++}`);
+      values.push(nameEs);
+    }
+    if (body.nameEn !== undefined) {
+      updates.push(`name_en = $${p++}`);
+      values.push(body.nameEn === null || body.nameEn === '' ? null : String(body.nameEn).trim());
+    }
+    if (body.personality) {
+      const pers = body.personality;
+      if (pers.ideals !== undefined) {
+        updates.push(`personality_ideals = $${p++}`);
+        values.push(pers.ideals === null || pers.ideals === '' ? null : String(pers.ideals).trim());
+      }
+      if (pers.bonds !== undefined) {
+        updates.push(`personality_bonds = $${p++}`);
+        values.push(pers.bonds === null || pers.bonds === '' ? null : String(pers.bonds).trim());
+      }
+      if (pers.flaws !== undefined) {
+        updates.push(`personality_flaws = $${p++}`);
+        values.push(pers.flaws === null || pers.flaws === '' ? null : String(pers.flaws).trim());
+      }
+    }
+
+    if (updates.length === 0) {
+      res.status(400).json({ error: 'Nada que actualizar' });
+      return;
+    }
+
+    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    values.push(id, authUserId);
+    const result = await pool.query(
+      `UPDATE characters SET ${updates.join(', ')} WHERE id = $${p} AND user_id = $${p + 1} RETURNING id, name_es, name_en`,
+      values
+    );
+    res.json({ message: 'Personaje actualizado', character: result.rows[0] });
+  } catch (error) {
+    console.error('Error actualizando personaje:', error);
+    res.status(500).json({ error: 'Error al actualizar personaje' });
   }
 }
 

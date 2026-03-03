@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
 import { api } from '../api/client';
+import type { CharacterSheetDto } from '../types/api';
+import AppHeader from '../components/AppHeader.vue';
 
 const route = useRoute();
 const router = useRouter();
-const auth = useAuthStore();
 
-const sheet = ref<Record<string, unknown> | null>(null);
+const sheet = ref<CharacterSheetDto | null>(null);
 const conditionsList = ref<Array<{ id: string; nameEs: string }>>([]);
 const loading = ref(true);
 const error = ref('');
@@ -24,6 +24,8 @@ const spellSlotsUsed = ref<Record<string, number>>({});
 const spellSlotsTotal = ref<Record<string, number>>({});
 const activeConditions = ref<string[]>([]);
 const inventory = ref<Array<{ id: string; name: string; quantity: number }>>([]);
+const saveSuccess = ref(false);
+let saveSuccessTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Nuevo objeto / condición a añadir
 const newItemName = ref('');
@@ -34,27 +36,27 @@ const id = computed(() => route.params.id as string);
 
 function syncFromSheet() {
   if (!sheet.value) return;
-  const h = sheet.value.health as { current: number; maximum: number } | undefined;
+  const h = sheet.value.health;
   if (h) {
     currentHealth.value = h.current;
     maximumHealth.value = h.maximum;
   }
   currentGold.value = Number(sheet.value.gold) || 0;
   inspiration.value = Number(sheet.value.inspiration) || 0;
-  concentratingOn.value = (sheet.value.concentratingOn as string) || null;
-  const slots = sheet.value.spellSlots as Record<string, number> | undefined;
+  concentratingOn.value = sheet.value.concentratingOn ?? null;
+  const slots = sheet.value.spellSlots;
   if (slots) spellSlotsUsed.value = { ...slots };
-  const total = sheet.value.spellSlotsTotal as Record<string, number> | undefined;
+  const total = sheet.value.spellSlotsTotal;
   if (total) spellSlotsTotal.value = { ...total };
-  activeConditions.value = [...((sheet.value.activeConditions as string[]) || [])];
-  inventory.value = [...((sheet.value.inventory as Array<{ id: string; name: string; quantity: number }>) || [])];
+  activeConditions.value = [...(sheet.value.activeConditions ?? [])];
+  inventory.value = [...(sheet.value.inventory ?? [])];
 }
 
 onMounted(async () => {
   try {
     const [charRes, condRes] = await Promise.all([
-      api.get<Record<string, unknown>>(`/characters/${id.value}`, auth.token ?? undefined),
-      api.get<Array<{ id: string; nameEs: string }>>('/conditions', auth.token ?? undefined),
+      api.get<CharacterSheetDto>(`/characters/${id.value}`),
+      api.get<Array<{ id: string; nameEs: string }>>('/conditions'),
     ]);
     sheet.value = charRes;
     conditionsList.value = condRes ?? [];
@@ -69,6 +71,8 @@ onMounted(async () => {
 async function saveStats() {
   saving.value = true;
   error.value = '';
+  saveSuccess.value = false;
+  if (saveSuccessTimer) clearTimeout(saveSuccessTimer);
   try {
     const body: Record<string, unknown> = {
       currentHealth: currentHealth.value,
@@ -78,9 +82,11 @@ async function saveStats() {
       concentratingOn: concentratingOn.value ?? '',
     };
     if (Object.keys(spellSlotsUsed.value).length) body.spellSlotsUsed = spellSlotsUsed.value;
-    await api.patch(`/characters/${id.value}/stats`, body, auth.token ?? undefined);
-    sheet.value = await api.get(`/characters/${id.value}`, auth.token ?? undefined);
+    await api.patch(`/characters/${id.value}/stats`, body);
+    sheet.value = await api.get<CharacterSheetDto>(`/characters/${id.value}`);
     syncFromSheet();
+    saveSuccess.value = true;
+    saveSuccessTimer = setTimeout(() => { saveSuccess.value = false; }, 2500);
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Error al guardar';
   } finally {
@@ -94,9 +100,9 @@ function adjustHealth(delta: number) {
 
 async function setConditions(ids: string[]) {
   try {
-    await api.put(`/characters/${id.value}/conditions`, { conditionIds: ids }, auth.token ?? undefined);
+    await api.put(`/characters/${id.value}/conditions`, { conditionIds: ids });
     activeConditions.value = [...ids];
-    if (sheet.value) (sheet.value as Record<string, unknown>).activeConditions = ids;
+    if (sheet.value) sheet.value.activeConditions = ids;
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Error al actualizar condiciones';
   }
@@ -118,8 +124,7 @@ async function addInventoryItem() {
   try {
     const item = await api.post<{ id: string; name: string; quantity: number }>(
       `/characters/${id.value}/inventory`,
-      { name: newItemName.value.trim(), quantity: newItemQty.value },
-      auth.token ?? undefined
+      { name: newItemName.value.trim(), quantity: newItemQty.value }
     );
     inventory.value = [...inventory.value, item];
     newItemName.value = '';
@@ -132,9 +137,10 @@ async function addInventoryItem() {
 async function updateInventoryQuantity(itemId: string, quantity: number) {
   const q = Math.max(0, quantity);
   try {
-    await api.patch(`/characters/${id.value}/inventory/${itemId}`, { quantity: q }, auth.token ?? undefined);
+    await api.patch(`/characters/${id.value}/inventory/${itemId}`, { quantity: q });
     const i = inventory.value.findIndex(x => x.id === itemId);
-    if (i >= 0) inventory.value[i] = { ...inventory.value[i], quantity: q };
+    const item = inventory.value[i];
+    if (i >= 0 && item) inventory.value[i] = { id: item.id, name: item.name, quantity: q };
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Error al actualizar';
   }
@@ -142,7 +148,7 @@ async function updateInventoryQuantity(itemId: string, quantity: number) {
 
 async function removeInventoryItem(itemId: string) {
   try {
-    await api.delete(`/characters/${id.value}/inventory/${itemId}`, auth.token ?? undefined);
+    await api.delete(`/characters/${id.value}/inventory/${itemId}`);
     inventory.value = inventory.value.filter(x => x.id !== itemId);
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Error al eliminar';
@@ -171,16 +177,12 @@ function goSheet() {
 
 <template>
   <div class="page">
-    <header class="header">
-      <div class="logo">
-        <span class="logo-icon">✦</span>
-        <h1>ARCANUM</h1>
-      </div>
-      <div class="nav">
+    <AppHeader>
+      <template #actions>
         <button type="button" class="btn ghost" @click="goSheet">Ficha</button>
         <button type="button" class="btn ghost" @click="back">← Volver</button>
-      </div>
-    </header>
+      </template>
+    </AppHeader>
 
     <main class="main">
       <div v-if="loading" class="loading">Cargando...</div>
@@ -299,6 +301,7 @@ function goSheet() {
         </section>
 
         <div class="save-row">
+          <p v-if="saveSuccess" class="save-success" role="status">✓ Guardado correctamente</p>
           <button type="button" class="btn primary" :disabled="saving" @click="saveStats">
             {{ saving ? 'Guardando...' : 'Guardar vida, oro, inspiración, hechizos y concentración' }}
           </button>
@@ -313,36 +316,6 @@ function goSheet() {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.5rem;
-  background: linear-gradient(180deg, rgba(42, 32, 24, 0.98) 0%, rgba(26, 21, 16, 0.99) 100%);
-  border-bottom: 2px solid var(--border-parchment);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-.logo-icon {
-  color: var(--accent-gold);
-  font-size: 1.25rem;
-}
-.header h1 {
-  font-family: var(--font-title);
-  font-size: 1.35rem;
-  margin: 0;
-  letter-spacing: 0.15em;
-  color: var(--accent-gold-light);
-  font-weight: 700;
-}
-.nav {
-  display: flex;
-  gap: 0.5rem;
 }
 .btn {
   padding: 0.5rem 1rem;
@@ -576,6 +549,21 @@ function goSheet() {
 
 .save-row {
   margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.save-success {
+  margin: 0;
+  color: #2e7d32;
+  font-weight: 600;
+  font-size: 0.95rem;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 .muted {
   color: var(--ink-muted);

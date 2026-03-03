@@ -1,15 +1,5 @@
-# ARCANUM - Frontend
+# Vue 3 + TypeScript + Vite
 
-Frontend de la aplicación D&D construida con **Vue.js** y **TypeScript**.
+This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
 
-## Características
-- Creación de personajes con razas y clases (ES/EN)
-- Gestión de recursos: oro, vida, puntos de hechizo, etc.
-- Interfaz intuitiva para jugadores
-
-## Configuración (próximamente)
-- Vue 3
-- TypeScript
-- Vite (build tool)
-- Componentes reutilizables
-- Soporte multiidioma (i18n)
+Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).

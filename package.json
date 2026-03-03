@@ -1,0 +1,10 @@
+{
+  "name": "arcanum",
+  "private": true,
+  "description": "Scripts para lanzar ARCANUM",
+  "scripts": {
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "dev:frontend": "cd frontend && npm run dev"
+  }
+}

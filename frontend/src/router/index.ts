@@ -9,6 +9,24 @@ const router = createRouter({
       redirect: () => (useAuthStore().isLoggedIn ? '/personajes' : '/login'),
     },
     {
+      path: '/campanas',
+      name: 'Campanas',
+      component: () => import('../views/CampaignListView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/campanas/nueva',
+      name: 'NuevaCampana',
+      component: () => import('../views/CreateCampaignView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/campanas/:id',
+      name: 'DetalleCampana',
+      component: () => import('../views/CampaignDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/login',
       name: 'Login',
       component: () => import('../views/AuthView.vue'),

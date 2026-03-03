@@ -94,7 +94,9 @@ function toggleMode() {
             autocomplete="password"
             placeholder="••••••••"
             required
+            minlength="6"
           />
+          <span v-if="isRegister" class="hint">Mínimo 6 caracteres</span>
         </div>
         <div v-if="isRegister" class="field">
           <label for="passwordConfirm">Repetir contraseña</label>
@@ -105,6 +107,7 @@ function toggleMode() {
             autocomplete="new-password"
             placeholder="••••••••"
           />
+          <span v-if="passwordConfirm && password !== passwordConfirm" class="hint error-hint">Las contraseñas no coinciden</span>
         </div>
         <p v-if="error" class="error">{{ error }}</p>
         <button type="submit" class="btn primary" :disabled="!canSubmit || loading">
@@ -192,6 +195,13 @@ function toggleMode() {
   border-color: var(--accent-gold);
   background: rgba(255, 255, 255, 0.7);
   box-shadow: 0 0 0 2px var(--accent-glow);
+}
+.hint {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+}
+.hint.error-hint {
+  color: #b71c1c;
 }
 .error {
   color: #b71c1c;
