@@ -1,81 +1,94 @@
 /* ================================================================
-   ARCANUM — Sistema de diseño "Brasa y Penumbra"
-   Paleta: Piedra cálida oscura · Ámbar brasa · Oro bruñido · Violeta solo en magia
+   ARCANUM — "Índigo Arcano"
+   Estética: Dark modern clean, como la web de referencia
+   ────────────────────────────────────────────────────────────────
+   Fondo   : índigo-negro profundo (#111120)
+   Primario: cian-teal (#2dd4bf) — interacción, focus, activos
+   Magia   : violeta claro limpio (#a78bfa)
+   D&D     : ámbar-oro (#f59e0b) — clases, objetos, niveles
+   Peligro : rojo coral (#f87171)
+   Tarjetas: ligeramente más claras con borde muy sutil
    ================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
 
 /* ——— Tokens de diseño ——— */
 :root {
-  /* Tipografía */
   --font-title: 'Cinzel', serif;
-  --font-body: 'EB Garamond', Georgia, serif;
+  --font-body: 'Outfit', system-ui, sans-serif;
   --font-data: 'Outfit', system-ui, sans-serif;
 
-  /* Fondo: piedra oscura cálida — como una mazmorra con antorchas */
-  --bg-stone: #0f0d0a;
-  --bg-elevated: #17150f;
-  --bg-card: #1f1c15;
-  --bg-card-hover: #272319;
-  --bg-input: #151209;
+  /* ── Fondos: índigo-negro, como en la referencia ── */
+  --bg-stone: #111120;
+  --bg-elevated: #17162a;
+  --bg-card: #1d1c30;
+  --bg-card-hover: #242338;
+  --bg-input: #151424;
 
-  /* Texto: crema cálida — legible, sin frío */
-  --text-primary: #f0e8d8;
-  --text-muted: #9a8970;
-  --text-faint: #5c5040;
+  /* ── Texto ── */
+  --text-primary: #e4e2f6;
+  --text-muted: #8886a8;
+  --text-faint: #4a4868;
 
-  /* Acento principal: ámbar brasa (interacción, botones, bordes, foco) */
-  --arcane: #e09848;
-  --arcane-dim: rgba(224, 152, 72, 0.16);
-  --arcane-glow: 0 0 20px rgba(224, 152, 72, 0.24), 0 0 40px rgba(224, 152, 72, 0.07);
-  --arcane-glow-strong: 0 0 26px rgba(224, 152, 72, 0.5), 0 0 56px rgba(224, 152, 72, 0.14);
+  /* ── Teal/cian: acento principal, botones, focus, activos ── */
+  --arcane: #2dd4bf;
+  --arcane-dim: rgba(45, 212, 191, 0.12);
+  --arcane-glow: 0 0 12px rgba(45, 212, 191, 0.18);
+  --arcane-glow-strong: 0 0 20px rgba(45, 212, 191, 0.28), 0 0 40px rgba(45, 212, 191, 0.08);
 
-  /* Dorado bruñido (títulos, runas decorativas, separadores) */
-  --gold: #c9a030;
-  --gold-light: #ddb844;
-  --gold-dim: rgba(201, 160, 48, 0.22);
-  --gold-glow: 0 0 18px rgba(201, 160, 48, 0.38);
+  /* ── Dorado/ámbar: clases, objetos, rankings ── */
+  --gold: #d97706;
+  --gold-light: #f59e0b;
+  --gold-bright: #fbbf24;
+  --gold-dim: rgba(217, 119, 6, 0.14);
+  --gold-glow: 0 0 12px rgba(245, 158, 11, 0.22);
 
-  /* Violeta arcano — solo para magia/hechizos, acento secundario puntual */
-  --magic: #9b72d4;
-  --magic-dim: rgba(155, 114, 212, 0.15);
-  --magic-glow: 0 0 16px rgba(155, 114, 212, 0.3);
+  /* ── Violeta: hechizos, magia ── */
+  --magic: #a78bfa;
+  --magic-dim: rgba(167, 139, 250, 0.12);
+  --magic-glow: 0 0 12px rgba(167, 139, 250, 0.22);
 
-  /* Naturaleza */
-  --nature: #4ade80;
-  --nature-dim: rgba(74, 222, 128, 0.15);
+  /* ── Verde: curación, naturaleza ── */
+  --nature: #34d399;
+  --nature-dim: rgba(52, 211, 153, 0.12);
 
-  /* Peligro/dragón */
+  /* ── Rojo: daño, peligro ── */
   --danger: #f87171;
   --danger-dim: rgba(248, 113, 113, 0.12);
-  --danger-glow: 0 0 16px rgba(248, 113, 113, 0.35);
+  --danger-glow: 0 0 12px rgba(248, 113, 113, 0.22);
 
-  /* Éxito */
+  /* ── Éxito ── */
   --success: #34d399;
   --success-dim: rgba(52, 211, 153, 0.12);
 
-  /* Bordes */
-  --border-arcane: rgba(224, 152, 72, 0.2);
-  --border-gold: rgba(201, 160, 48, 0.35);
-  --border-subtle: rgba(255, 255, 255, 0.05);
+  /* ── Bordes ── */
+  --border-arcane: rgba(45, 212, 191, 0.18);
+  --border-gold: rgba(245, 158, 11, 0.22);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-steel: rgba(167, 139, 250, 0.15);
+  --border-success: rgba(52, 211, 153, 0.3);
+  --border-danger: rgba(248, 113, 113, 0.3);
 
-  /* Separadores rúnicos */
+  /* ── Separador limpio ── */
   --runic-line: linear-gradient(90deg,
     transparent 0%,
-    var(--gold-dim) 15%,
-    rgba(201, 160, 48, 0.55) 50%,
-    var(--gold-dim) 85%,
+    rgba(45, 212, 191, 0.08) 20%,
+    rgba(45, 212, 191, 0.24) 50%,
+    rgba(45, 212, 191, 0.08) 80%,
     transparent 100%
   );
 
-  /* Sombras */
-  --shadow-card: 0 2px 14px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.35);
-  --shadow-raised: 0 8px 36px rgba(0,0,0,0.6);
+  /* ── Sombras ── */
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-raised: 0 8px 32px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-inset: inset 0 1px 3px rgba(0, 0, 0, 0.4);
 
-  /* Curvas de animación */
-  --ease-out: 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-spring: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-quick: 0.15s ease-out;
+  /* ── Animaciones ── */
+  --ease-out: 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-quick: 0.14s ease-out;
 
-  /* Alias de compatibilidad */
+  /* ── Alias de compatibilidad ── */
   --parchment: var(--text-muted);
   --parchment-dark: var(--text-primary);
   --ink: var(--text-primary);
@@ -108,13 +121,13 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family: var(--font-body);
-  font-size: 1.05rem;
+  font-size: 0.97rem;
   line-height: 1.6;
   color: var(--text-primary);
   background-color: var(--bg-stone);
   background-image:
-    radial-gradient(ellipse 80% 40% at 50% -5%, rgba(224, 152, 72, 0.07) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 35% at 90% 110%, rgba(201, 160, 48, 0.05) 0%, transparent 50%);
+    radial-gradient(ellipse 80% 40% at 50% -5%, rgba(167, 139, 250, 0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 30% at 100% 100%, rgba(45, 212, 191, 0.04) 0%, transparent 55%);
 }
 
 #app { min-height: 100vh; }
@@ -130,59 +143,68 @@ h1, h2, h3, .font-title {
   line-height: 1.2;
 }
 
+/* Títulos de sección menores en Outfit */
+h4, h5, h6 { font-family: var(--font-body); font-weight: 600; color: var(--text-primary); }
+
 .font-data { font-family: var(--font-data); }
 
-a { color: var(--arcane); text-decoration: none; transition: color var(--ease-quick), text-shadow var(--ease-quick); }
-a:hover { color: #f0b870; text-shadow: 0 0 10px rgba(224,152,72,0.4); }
+a {
+  color: var(--arcane);
+  text-decoration: none;
+  transition: color var(--ease-quick), opacity var(--ease-quick);
+}
+a:hover { color: #5eeedd; opacity: 0.9; }
 
-/* ——— Separadores rúnicos ——— */
+/* ——— Separador ——— */
 .runic-separator {
   height: 1px;
   border: none;
   background: var(--runic-line);
   margin: 1.25rem 0;
-  opacity: 0.7;
 }
 
 .section-title {
-  font-family: var(--font-title);
-  font-size: 0.72rem;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--gold);
+  color: var(--text-muted);
   margin: 0 0 0.85rem 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--gold-dim);
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
-/* ——— Paneles (dark-card + alias parchment-panel) ——— */
+/* ——— Tarjetas ——— */
 .dark-card,
 .parchment-panel {
   background: var(--bg-card);
-  border: 1px solid var(--border-arcane);
-  border-radius: 8px;
-  box-shadow: var(--shadow-card), var(--arcane-glow);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  box-shadow: var(--shadow-card);
   color: var(--text-primary);
-  transition: box-shadow var(--ease-out), border-color var(--ease-out), transform var(--ease-out);
+  transition:
+    border-color var(--ease-out),
+    box-shadow var(--ease-out),
+    transform var(--ease-out);
 }
 .dark-card:hover,
 .parchment-panel:hover {
-  box-shadow: var(--shadow-raised), var(--arcane-glow-strong);
-  border-color: rgba(224, 152, 72, 0.35);
+  border-color: rgba(45, 212, 191, 0.18);
+  box-shadow: var(--shadow-card), var(--arcane-glow);
 }
 
-/* ——— Botones globales ——— */
+/* ——— Botones ——— */
 button {
   font-family: var(--font-body);
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   border: 1px solid transparent;
   transition:
-    box-shadow var(--ease-out),
-    transform var(--ease-spring),
     background var(--ease-quick),
     border-color var(--ease-quick),
+    box-shadow var(--ease-out),
+    transform var(--ease-spring),
     filter var(--ease-quick);
 }
 button:focus-visible {
@@ -190,98 +212,115 @@ button:focus-visible {
   outline-offset: 2px;
 }
 button:not(:disabled):active { transform: scale(0.97); }
-button:disabled { opacity: 0.5; cursor: not-allowed; }
+button:disabled { opacity: 0.42; cursor: not-allowed; }
 
-/* Botón brasa (CTA principal) */
+/* Primario teal */
 .btn-arc {
-  background: linear-gradient(135deg, rgba(224, 152, 72, 0.25) 0%, rgba(201, 120, 40, 0.18) 100%);
-  color: var(--text-primary);
-  border-color: rgba(224, 152, 72, 0.42);
-  padding: 0.55rem 1.1rem;
-  font-size: 0.95rem;
+  background: rgba(45, 212, 191, 0.14);
+  color: var(--arcane);
+  border-color: rgba(45, 212, 191, 0.3);
+  padding: 0.5rem 1.1rem;
+  font-size: 0.93rem;
   font-weight: 500;
 }
-.btn-arc:not(:disabled):hover { box-shadow: var(--arcane-glow-strong); border-color: var(--arcane); }
+.btn-arc:not(:disabled):hover {
+  background: rgba(45, 212, 191, 0.2);
+  border-color: var(--arcane);
+  box-shadow: var(--arcane-glow-strong);
+  color: #a0f5ec;
+}
 
-/* Botón dorado (acción más importante de una vista) */
+/* Dorado / highlight D&D */
 .btn-gold {
-  background: linear-gradient(135deg, rgba(201, 162, 39, 0.35) 0%, rgba(201, 162, 39, 0.2) 100%);
-  color: var(--gold-light);
+  background: var(--gold-dim);
+  color: var(--gold-bright);
   border-color: var(--border-gold);
-  padding: 0.55rem 1.1rem;
-  font-size: 0.95rem;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.93rem;
   font-weight: 500;
 }
-.btn-gold:not(:disabled):hover { box-shadow: var(--gold-glow); filter: brightness(1.1); }
+.btn-gold:not(:disabled):hover {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: var(--gold-light);
+  box-shadow: var(--gold-glow);
+}
 
-/* Botón fantasma */
+/* Fantasma */
 .btn-ghost {
   background: transparent;
   color: var(--text-muted);
   border-color: transparent;
   padding: 0.5rem 0.9rem;
-  font-size: 0.95rem;
+  font-size: 0.93rem;
 }
-.btn-ghost:not(:disabled):hover { color: var(--gold-light); border-color: var(--border-arcane); }
+.btn-ghost:not(:disabled):hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-subtle);
+}
 
-/* Botón peligro */
+/* Peligro */
 .btn-danger {
   background: var(--danger-dim);
   color: var(--danger);
-  border-color: rgba(248, 113, 113, 0.35);
+  border-color: rgba(248, 113, 113, 0.28);
   padding: 0.5rem 1rem;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
 }
-.btn-danger:not(:disabled):hover { box-shadow: var(--danger-glow); filter: brightness(1.1); }
+.btn-danger:not(:disabled):hover {
+  background: rgba(248, 113, 113, 0.18);
+  border-color: rgba(248, 113, 113, 0.5);
+  box-shadow: var(--danger-glow);
+}
 
-/* Variante pequeña */
-.btn-sm { padding: 0.35rem 0.7rem !important; font-size: 0.85rem !important; }
-.btn-lg { padding: 0.75rem 1.75rem !important; font-size: 1.05rem !important; }
+/* Tamaños */
+.btn-sm { padding: 0.3rem 0.65rem !important; font-size: 0.8rem !important; border-radius: 6px !important; }
+.btn-lg { padding: 0.7rem 1.75rem !important; font-size: 1rem !important; }
 
-/* ——— Inputs & formularios ——— */
+/* ——— Inputs ——— */
 input, select, textarea {
-  font-family: var(--font-data);
+  font-family: var(--font-body);
   background: var(--bg-input);
-  border: 1px solid var(--border-arcane);
-  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
   color: var(--text-primary);
-  padding: 0.55rem 0.85rem;
-  font-size: 0.95rem;
+  padding: 0.52rem 0.85rem;
+  font-size: 0.93rem;
   transition: border-color var(--ease-quick), box-shadow var(--ease-quick);
 }
 input::placeholder, textarea::placeholder { color: var(--text-faint); }
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: var(--arcane);
-  box-shadow: 0 0 0 3px rgba(224, 152, 72, 0.16);
+  border-color: rgba(45, 212, 191, 0.45);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.1);
 }
 select { appearance: none; cursor: pointer; }
 
-/* ——— Badges ——— */
+/* ——— Chips / Badges ——— */
 .badge {
   display: inline-flex;
   align-items: center;
-  font-family: var(--font-data);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
   padding: 0.2rem 0.55rem;
-  border-radius: 4px;
+  border-radius: 99px;
   line-height: 1.4;
+  white-space: nowrap;
 }
-.badge-arcane { background: var(--magic-dim); color: var(--magic); border: 1px solid rgba(155,114,212,0.3); }
-.badge-gold   { background: var(--gold-dim); color: var(--gold-light); border: 1px solid var(--border-gold); }
-.badge-nature { background: var(--nature-dim); color: var(--nature); border: 1px solid rgba(74,222,128,0.3); }
-.badge-danger { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(248,113,113,0.3); }
-.badge-ember  { background: var(--arcane-dim); color: var(--arcane); border: 1px solid rgba(224,152,72,0.3); }
+.badge-arcane { background: var(--magic-dim); color: var(--magic); border: 1px solid rgba(167,139,250,0.28); }
+.badge-gold   { background: var(--gold-dim);   color: var(--gold-bright); border: 1px solid rgba(245,158,11,0.28); }
+.badge-nature { background: var(--nature-dim); color: var(--nature); border: 1px solid rgba(52,211,153,0.28); }
+.badge-danger { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(248,113,113,0.28); }
+.badge-ember  { background: var(--arcane-dim); color: var(--arcane); border: 1px solid rgba(45,212,191,0.28); }
 
 /* ——— Loading / Error ——— */
 .loader-wrap { text-align: center; padding: 4rem 2rem; color: var(--text-muted); }
 .loader {
-  width: 40px; height: 40px;
+  width: 36px; height: 36px;
   margin: 0 auto 1rem;
-  border: 2px solid var(--arcane-dim);
+  border: 2px solid rgba(45, 212, 191, 0.14);
   border-top-color: var(--arcane);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -291,23 +330,23 @@ select { appearance: none; cursor: pointer; }
 .error-banner {
   color: var(--danger);
   background: var(--danger-dim);
-  border: 1px solid rgba(248,113,113,0.25);
-  border-radius: 6px;
+  border: 1px solid rgba(248, 113, 113, 0.24);
+  border-radius: 8px;
   padding: 0.75rem 1rem;
-  font-size: 0.95rem;
+  font-size: 0.93rem;
 }
 .success-banner {
-  color: var(--success);
-  background: var(--success-dim);
-  border: 1px solid rgba(52,211,153,0.25);
-  border-radius: 6px;
+  color: var(--nature);
+  background: var(--nature-dim);
+  border: 1px solid rgba(52, 211, 153, 0.24);
+  border-radius: 8px;
   padding: 0.75rem 1rem;
-  font-size: 0.95rem;
+  font-size: 0.93rem;
 }
 
-/* ——— Animaciones: aparición desde la niebla ——— */
+/* ——— Animaciones ——— */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes fadeInScale {
@@ -315,19 +354,23 @@ select { appearance: none; cursor: pointer; }
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 @keyframes cardIn {
-  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes shimmer {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  50% { opacity: 0.6; }
 }
 @keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0 rgba(224,152,72,0.45); }
-  70%  { box-shadow: 0 0 0 8px rgba(224,152,72,0); }
-  100% { box-shadow: 0 0 0 0 rgba(224,152,72,0); }
+  0%   { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.38); }
+  70%  { box-shadow: 0 0 0 8px rgba(45, 212, 191, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0); }
+}
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% center; }
+  50%       { background-position: 100% center; }
 }
 
-.animate-fade-in { animation: fadeIn 0.5s var(--ease-out) both; }
-.animate-fade-in-scale { animation: fadeInScale 0.45s var(--ease-out) both; }
-.animate-card-in { animation: cardIn 0.45s var(--ease-out) both; }
+.animate-fade-in       { animation: fadeIn 0.4s var(--ease-out) both; }
+.animate-fade-in-scale { animation: fadeInScale 0.36s var(--ease-out) both; }
+.animate-card-in       { animation: cardIn 0.38s var(--ease-out) both; }

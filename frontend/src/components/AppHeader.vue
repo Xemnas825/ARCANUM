@@ -144,7 +144,7 @@ function openNotification(notificationId: string, campaignId?: string) {
   justify-content: space-between;
   padding: 1rem 1.5rem;
   background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-stone) 100%);
-  border-bottom: 1px solid rgba(224, 152, 72, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
 }
 .logo {
@@ -213,17 +213,17 @@ function openNotification(notificationId: string, campaignId?: string) {
 }
 .nav-link:hover {
   color: var(--text-primary);
-  background: rgba(224, 152, 72, 0.08);
+  background: rgba(255, 255, 255, 0.05);
 }
 .nav-link.active {
-  color: var(--arcane-blue);
-  background: rgba(224, 152, 72, 0.12);
-  box-shadow: 0 0 16px rgba(224, 152, 72, 0.12);
+  color: var(--arcane);
+  background: rgba(45, 212, 191, 0.1);
+  border-color: rgba(45, 212, 191, 0.2);
 }
 .campaign-select {
   padding: 0.4rem 0.6rem;
   font-size: 0.85rem;
-  border: 1px solid rgba(224, 152, 72, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   background: var(--bg-stone-elevated);
   color: var(--text-primary);

@@ -342,10 +342,10 @@ function togglePrepared(id: string) {
 }
 
 .error-msg {
-  color: #f87171;
+  color: var(--danger);
   padding: 1rem 1.25rem;
-  background: rgba(248, 113, 113, 0.08);
-  border-radius: 6px;
+  background: var(--danger-dim);
+  border-radius: 8px;
   border: 1px solid rgba(248, 113, 113, 0.25);
 }
 
@@ -396,7 +396,7 @@ function togglePrepared(id: string) {
   font-size: 0.85rem;
   font-family: var(--font-data);
   background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(224, 152, 72, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 4px;
   color: var(--text-muted);
   cursor: pointer;
@@ -406,11 +406,11 @@ function togglePrepared(id: string) {
 .filter-chip:hover {
   color: var(--text-primary);
   border-color: var(--border-arcane);
-  box-shadow: 0 0 12px rgba(224, 152, 72, 0.18);
+  box-shadow: none;
 }
 
 .filter-chip.active {
-  background: rgba(224, 152, 72, 0.15);
+  background: rgba(45, 212, 191, 0.14);
   border-color: var(--arcane);
   color: var(--text-primary);
   box-shadow: var(--glow-arcane);
@@ -429,9 +429,9 @@ function togglePrepared(id: string) {
 }
 
 .spell-card:hover {
-  box-shadow: 0 0 22px rgba(155, 114, 212, 0.38), 0 0 50px rgba(155, 114, 212, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 14px rgba(167, 139, 250, 0.15);
   transform: translateY(-2px);
-  border-color: rgba(155, 114, 212, 0.38);
+  border-color: rgba(167, 139, 250, 0.3);
 }
 
 .spell-card:active {
@@ -453,7 +453,7 @@ function togglePrepared(id: string) {
 }
 
 .spell-level.cantrip {
-  color: #4ade80;
+  color: var(--nature);
 }
 
 .spell-school {
@@ -491,7 +491,7 @@ function togglePrepared(id: string) {
 }
 
 .concentration {
-  color: #4ade80;
+  color: var(--nature);
 }
 
 .empty-msg {
@@ -528,7 +528,7 @@ function togglePrepared(id: string) {
   align-items: flex-start;
   gap: 1rem;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid rgba(155, 114, 212, 0.22);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .modal-title {
@@ -564,7 +564,7 @@ function togglePrepared(id: string) {
 }
 
 .spell-level-badge.cantrip {
-  color: #4ade80;
+  color: var(--nature);
 }
 
 .spell-details {

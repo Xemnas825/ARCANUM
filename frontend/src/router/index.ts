@@ -27,6 +27,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/campanas/:id/combate',
+      name: 'CombateCampana',
+      component: () => import('../views/EncounterTrackerView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/login',
       name: 'Login',
       component: () => import('../views/AuthView.vue'),

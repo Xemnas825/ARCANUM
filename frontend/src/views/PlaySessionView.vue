@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { api } from '../api/client';
 import type { CharacterSheetDto } from '../types/api';
 import AppHeader from '../components/AppHeader.vue';
 import ContextHelp from '../components/ContextHelp.vue';
+import { useToastStore } from '../stores/toasts';
 
 const route = useRoute();
 const router = useRouter();
+const toasts = useToastStore();
 
 const sheet = ref<CharacterSheetDto | null>(null);
 const conditionsList = ref<Array<{ id: string; nameEs: string }>>([]);
@@ -26,6 +28,11 @@ const activeConditions = ref<string[]>([]);
 const inventory = ref<Array<{ id: string; name: string; quantity: number }>>([]);
 const saveSuccess = ref(false);
 let saveSuccessTimer: ReturnType<typeof setTimeout> | null = null;
+let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+const dirty = ref(false);
+const autoSaving = ref(false);
+const lastSavedAt = ref<number | null>(null);
+const isSyncingFromServer = ref(false);
 
 const newItemName = ref('');
 const newItemQty = ref(1);
@@ -65,7 +72,11 @@ const hpColor = computed(() => {
 });
 
 function syncFromSheet() {
-  if (!sheet.value) return;
+  isSyncingFromServer.value = true;
+  if (!sheet.value) {
+    isSyncingFromServer.value = false;
+    return;
+  }
   const h = sheet.value.health;
   if (h) { currentHealth.value = h.current; maximumHealth.value = h.maximum; }
   currentGold.value = Number(sheet.value.gold) || 0;
@@ -77,6 +88,8 @@ function syncFromSheet() {
   if (total) spellSlotsTotal.value = { ...total };
   activeConditions.value = [...(sheet.value.activeConditions ?? [])];
   inventory.value = [...(sheet.value.inventory ?? [])];
+  dirty.value = false;
+  isSyncingFromServer.value = false;
 }
 
 onMounted(async () => {
@@ -97,10 +110,11 @@ onMounted(async () => {
   }
 });
 
-async function saveStats() {
+async function saveStats(mode: 'manual' | 'auto' = 'manual') {
   saving.value = true;
+  autoSaving.value = mode === 'auto';
   error.value = '';
-  saveSuccess.value = false;
+  if (mode === 'manual') saveSuccess.value = false;
   if (saveSuccessTimer) clearTimeout(saveSuccessTimer);
   try {
     const body: Record<string, unknown> = {
@@ -114,13 +128,22 @@ async function saveStats() {
     await api.patch(`/characters/${id.value}/stats`, body);
     sheet.value = await api.get<CharacterSheetDto>(`/characters/${id.value}`);
     syncFromSheet();
-    saveSuccess.value = true;
-    saveSuccessTimer = setTimeout(() => { saveSuccess.value = false; }, 2500);
+    lastSavedAt.value = Date.now();
+    dirty.value = false;
+    if (mode === 'manual') {
+      saveSuccess.value = true;
+      saveSuccessTimer = setTimeout(() => { saveSuccess.value = false; }, 2500);
+    }
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Error al guardar';
   } finally {
     saving.value = false;
+    autoSaving.value = false;
   }
+}
+
+function saveStatsManual() {
+  saveStats('manual');
 }
 
 function adjustHealth(delta: number) {
@@ -230,6 +253,22 @@ const orderedInitiative = computed(() =>
 );
 
 const activeInitiativeId = computed(() => orderedInitiative.value[currentTurnIndex.value]?.id ?? null);
+const lastSavedLabel = computed(() => {
+  if (!lastSavedAt.value) return 'Sin guardar aún';
+  const seconds = Math.floor((Date.now() - lastSavedAt.value) / 1000);
+  if (seconds < 3) return 'Guardado justo ahora';
+  if (seconds < 60) return `Guardado hace ${seconds}s`;
+  const min = Math.floor(seconds / 60);
+  return `Guardado hace ${min}m`;
+});
+
+function scheduleAutosave() {
+  if (autosaveTimer) clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    if (!dirty.value || saving.value || loading.value || !sheet.value) return;
+    saveStats('auto');
+  }, 1800);
+}
 
 function saveInitiativeState() {
   localStorage.setItem(
@@ -371,8 +410,10 @@ async function copyCombatLog() {
     .join('\n');
   try {
     await navigator.clipboard.writeText(text || 'Sin entradas de combate.');
+    toasts.push('Registro copiado al portapapeles', 'success');
   } catch {
     error.value = 'No se pudo copiar el registro';
+    toasts.push('No se pudo copiar el registro', 'error');
   }
 }
 
@@ -390,10 +431,21 @@ function exportCombatLog() {
   a.download = `combat-log-${id.value}.txt`;
   a.click();
   URL.revokeObjectURL(url);
+  toasts.push('Registro exportado (.txt)', 'success');
 }
 
 function back() { router.push('/personajes'); }
 function goSheet() { router.push(`/personajes/${id.value}`); }
+
+watch(
+  [currentHealth, maximumHealth, currentGold, inspiration, concentratingOn, spellSlotsUsed],
+  () => {
+    if (loading.value || !sheet.value || isSyncingFromServer.value) return;
+    dirty.value = true;
+    scheduleAutosave();
+  },
+  { deep: true }
+);
 </script>
 
 <template>
@@ -677,12 +729,17 @@ function goSheet() { router.push(`/personajes/${id.value}`); }
           <div v-if="saveSuccess" class="success-banner animate-fade-in" role="status">
             ✓ Guardado correctamente
           </div>
+          <div class="save-meta font-data" :class="{ dirty }" role="status">
+            <span v-if="autoSaving">Guardado automático...</span>
+            <span v-else-if="dirty">Cambios sin guardar</span>
+            <span v-else>{{ lastSavedLabel }}</span>
+          </div>
           <button
             type="button"
             class="btn-gold btn-lg save-btn"
             :disabled="saving"
             :aria-busy="saving"
-            @click="saveStats"
+            @click="saveStatsManual"
           >
             <span v-if="saving" class="btn-spinner" aria-hidden="true"></span>
             {{ saving ? 'Guardando...' : 'Guardar estado' }}
@@ -785,7 +842,7 @@ function goSheet() { router.push(`/personajes/${id.value}`); }
   color: var(--success);
   border-color: rgba(52,211,153,0.3);
 }
-.hp-btn-heal:hover { box-shadow: 0 0 14px rgba(52,211,153,0.3); }
+.hp-btn-heal:hover { box-shadow: 0 0 10px rgba(52,211,153,0.2); }
 .rest-actions {
   display: flex;
   gap: 0.45rem;
@@ -847,9 +904,9 @@ function goSheet() { router.push(`/personajes/${id.value}`); }
 }
 .slot-pip.used {
   background: var(--arcane);
-  box-shadow: 0 0 6px rgba(96,165,250,0.5);
+  box-shadow: 0 0 6px rgba(167,139,250,0.4);
 }
-.slot-pip:hover { box-shadow: 0 0 10px rgba(96,165,250,0.5); }
+.slot-pip:hover { box-shadow: 0 0 10px rgba(167,139,250,0.45); }
 .slot-count {
   font-size: 0.78rem;
   color: var(--text-muted);
@@ -1015,8 +1072,8 @@ function goSheet() { router.push(`/personajes/${id.value}`); }
 }
 .log-damage { border-color: rgba(248,113,113,0.25); }
 .log-heal { border-color: rgba(52,211,153,0.25); }
-.log-condition { border-color: rgba(224,152,72,0.25); }
-.log-turn { border-color: rgba(201,160,48,0.28); }
+.log-condition { border-color: rgba(167,139,250,0.25); }
+.log-turn { border-color: rgba(45,212,191,0.25); }
 
 .empty-note { color: var(--text-faint); font-size: 0.9rem; margin: 0; font-style: italic; }
 
@@ -1029,6 +1086,13 @@ function goSheet() { router.push(`/personajes/${id.value}`); }
   gap: 1rem;
   flex-wrap: wrap;
 }
+.save-meta {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+.save-meta.dirty {
+  color: var(--gold-light);
+}
 .save-btn {
   display: inline-flex;
   align-items: center;
@@ -1038,7 +1102,7 @@ function goSheet() { router.push(`/personajes/${id.value}`); }
 }
 .btn-spinner {
   width: 14px; height: 14px;
-  border: 2px solid rgba(201,162,39,0.3);
+  border: 2px solid rgba(45,212,191,0.2);
   border-top-color: var(--gold);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;

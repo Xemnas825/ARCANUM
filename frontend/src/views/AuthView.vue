@@ -171,8 +171,8 @@ function toggleMode() {
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(ellipse 70% 55% at 50% 50%, rgba(224, 152, 72, 0.06) 0%, transparent 65%),
-    radial-gradient(ellipse 50% 40% at 20% 80%, rgba(201, 162, 39, 0.04) 0%, transparent 50%);
+    radial-gradient(ellipse 70% 55% at 50% 50%, rgba(167, 139, 250, 0.07) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 20% 80%, rgba(45, 212, 191, 0.04) 0%, transparent 50%);
 }
 
 /* Partículas flotantes decorativas */
@@ -183,8 +183,8 @@ function toggleMode() {
   font-size: 0.8rem;
   animation: floatParticle 9s ease-in-out infinite;
 }
-.particle.arc  { color: var(--arcane); filter: drop-shadow(0 0 4px rgba(224,152,72,0.5)); }
-.particle.gold { color: var(--gold);   filter: drop-shadow(0 0 4px rgba(201,160,48,0.4)); }
+.particle.arc  { color: var(--arcane); filter: drop-shadow(0 0 4px rgba(45,212,191,0.4)); }
+.particle.gold { color: var(--magic);  filter: drop-shadow(0 0 4px rgba(167,139,250,0.4)); }
 .p1 { left: 10%; top: 20%; animation-delay: 0s;   opacity: 0.22; }
 .p2 { left: 85%; top: 15%; animation-delay: 1.5s; opacity: 0.16; font-size: 1.1rem; }
 .p3 { left: 70%; top: 75%; animation-delay: 3s;   opacity: 0.20; }
@@ -206,7 +206,7 @@ function toggleMode() {
   border: 1px solid var(--border-arcane);
   border-radius: 12px;
   padding: 2.5rem 2.25rem;
-  box-shadow: var(--shadow-raised), var(--arcane-glow), 0 0 80px rgba(224,152,72,0.05);
+  box-shadow: var(--shadow-raised), var(--arcane-glow);
   position: relative;
   z-index: 1;
 }
@@ -219,7 +219,7 @@ function toggleMode() {
   display: block;
   margin-bottom: 0.5rem;
   animation: shimmer 3s ease-in-out infinite;
-  filter: drop-shadow(0 0 10px rgba(201, 162, 39, 0.5));
+  filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.45));
 }
 .brand-name {
   font-family: var(--font-title);
@@ -282,7 +282,7 @@ function toggleMode() {
 }
 .btn-spinner {
   width: 14px; height: 14px;
-  border: 2px solid rgba(201, 162, 39, 0.3);
+  border: 2px solid rgba(45, 212, 191, 0.2);
   border-top-color: var(--gold);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
@@ -302,5 +302,5 @@ function toggleMode() {
   padding: 0.25rem;
   transition: color var(--ease-quick), text-shadow var(--ease-quick);
 }
-.link-btn:hover { color: #f0b870; text-shadow: 0 0 8px rgba(224,152,72,0.4); }
+.link-btn:hover { color: var(--arcane); }
 </style>

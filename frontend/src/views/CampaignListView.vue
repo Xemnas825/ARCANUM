@@ -179,13 +179,13 @@ function logout() { auth.logout(); router.push('/login'); }
   font-size: 1.5rem;
   width: 2.75rem; height: 2.75rem;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(201, 162, 39, 0.08);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border-gold);
   border-radius: 8px;
   flex-shrink: 0;
   transition: background var(--ease-out), box-shadow var(--ease-out);
 }
-.campaign-card:hover .campaign-icon { background: rgba(201, 162, 39, 0.14); box-shadow: var(--gold-glow); }
+.campaign-card:hover .campaign-icon { background: rgba(45, 212, 191, 0.12); box-shadow: var(--arcane-glow); }
 .campaign-info { flex: 1; min-width: 0; }
 .campaign-title-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.3rem; flex-wrap: wrap; }
 .campaign-name {

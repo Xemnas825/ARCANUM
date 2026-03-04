@@ -124,6 +124,11 @@ function goCharacter(id: string) {
   router.push(`/personajes/${id}`);
 }
 
+function goCombatTracker() {
+  if (!campaignId.value) return;
+  router.push(`/campanas/${campaignId.value}/combate`);
+}
+
 async function createInviteLink() {
   if (!campaignId.value) return;
   creatingInvite.value = true;
@@ -237,6 +242,7 @@ function logout() {
                 {{ campaignsStore.current.role === 'master' ? 'Máster' : 'Jugador' }}
               </span>
               <button v-if="isMaster" type="button" class="btn-ghost btn-sm" @click="startEdit" aria-label="Editar campaña">Editar</button>
+              <button type="button" class="btn-gold btn-sm" @click="goCombatTracker">Combat Tracker</button>
             </div>
             <form v-else class="edit-form" @submit.prevent="saveEdit">
               <input v-model="editName" type="text" required placeholder="Nombre de la campaña" aria-label="Nombre" />
@@ -380,7 +386,7 @@ function logout() {
   padding: 0.25rem 0;
   transition: color var(--ease-quick), text-shadow var(--ease-quick);
 }
-.back-link:hover { color: #93c5fd; text-shadow: 0 0 8px rgba(96,165,250,0.35); }
+.back-link:hover { color: var(--arcane); }
 
 /* Hero */
 .hero { padding: 1.5rem 1.75rem; margin-bottom: 0; }
@@ -487,7 +493,7 @@ function logout() {
   cursor: pointer;
   transition: background var(--ease-quick), border-color var(--ease-quick);
 }
-.char-item:hover { background: rgba(96,165,250,0.06); border-color: var(--border-arcane); }
+.char-item:hover { background: rgba(45,212,191,0.05); border-color: var(--border-arcane); }
 .char-item:focus-visible { outline: 2px solid var(--arcane); outline-offset: 2px; }
 .char-icon { color: var(--arcane); opacity: 0.5; font-size: 0.9rem; flex-shrink: 0; }
 .char-details { flex: 1; min-width: 0; }

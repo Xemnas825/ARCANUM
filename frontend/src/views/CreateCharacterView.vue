@@ -7,10 +7,12 @@ import { pathWithCampaign } from '../stores/campaigns';
 import { api } from '../api/client';
 import type { CharacterCreationOptionsDto } from '../types/api';
 import AppHeader from '../components/AppHeader.vue';
+import { useToastStore } from '../stores/toasts';
 
 const router = useRouter();
 const auth = useAuthStore();
 const campaignsStore = useCampaignStore();
+const toasts = useToastStore();
 
 const options = ref<CharacterCreationOptionsDto | null>(null);
 const loading = ref(true);
@@ -54,6 +56,8 @@ const ABILITY_NAMES: Record<string, string> = {
 
 const DRAFT_KEY = 'arcanum_character_creation_draft_v1';
 const hasLoadedDraft = ref(false);
+const attemptedSubmit = ref(false);
+const touchedName = ref(false);
 
 function getRequiredSkillChoices(classItem: CharacterCreationOptionsDto['classes'][0] | null): number {
   const count = classItem?.skillOptions?.length ?? 0;
@@ -94,6 +98,24 @@ const raceBonusSummary = computed(() => {
     .map((key) => ({ key, bonus: raceBonusFor(key) }))
     .filter((x) => x.bonus !== 0)
     .map((x) => `${x.bonus > 0 ? '+' : ''}${x.bonus} ${ABILITY_NAMES[x.key]}`);
+});
+const invalidAbilityCount = computed(() =>
+  ABILITY_KEYS.filter((k) => Number(abilities.value[k]) < 8 || Number(abilities.value[k]) > 20).length
+);
+const nameFieldError = computed(() => {
+  if (!attemptedSubmit.value && !touchedName.value) return '';
+  return nameEs.value.trim() ? '' : 'El nombre en español es obligatorio.';
+});
+const skillsFieldError = computed(() => {
+  const opts = selectedClass.value?.skillOptions?.length ?? 0;
+  if (!opts) return '';
+  if (!attemptedSubmit.value) return '';
+  if (skillProficiencies.value.length === requiredSkillChoices.value) return '';
+  return `Debes elegir ${requiredSkillChoices.value} competencias para esta clase.`;
+});
+const abilitiesFieldError = computed(() => {
+  if (!attemptedSubmit.value) return '';
+  return invalidAbilityCount.value > 0 ? 'Todas las características deben estar entre 8 y 20.' : '';
 });
 
 async function loadOptions(campaignIdForOptions: string | null) {
@@ -225,8 +247,13 @@ const canSubmit = computed(() => {
 });
 
 async function submit() {
+  attemptedSubmit.value = true;
   if (!auth.user || !nameEs.value.trim() || !raceId.value || !classId.value) {
     error.value = 'Nombre, raza y clase son obligatorios';
+    return;
+  }
+  if (invalidAbilityCount.value > 0) {
+    error.value = 'Revisa las características: deben estar entre 8 y 20.';
     return;
   }
   const opts = selectedClass.value?.skillOptions?.length ?? 0;
@@ -263,7 +290,8 @@ async function submit() {
       },
     };
     await api.post('/characters', body);
-    clearDraft();
+    clearDraft(false);
+    toasts.push('Personaje creado correctamente', 'success');
     router.push('/personajes');
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Error al crear personaje';
@@ -276,8 +304,13 @@ function back() {
   router.push('/personajes');
 }
 
-function clearDraft() {
+function clearDraft(notify = true) {
   localStorage.removeItem(DRAFT_KEY);
+  if (notify) toasts.push('Borrador eliminado', 'info');
+}
+
+function clearDraftFromButton() {
+  clearDraft(true);
 }
 
 function saveDraft() {
@@ -328,6 +361,7 @@ function loadDraft(): boolean {
     personalityIdeals.value = String(parsed.personalityIdeals ?? '');
     personalityBonds.value = String(parsed.personalityBonds ?? '');
     personalityFlaws.value = String(parsed.personalityFlaws ?? '');
+    toasts.push('Borrador restaurado', 'info');
     return true;
   } catch {
     return false;
@@ -372,7 +406,8 @@ watch(
           <div class="row">
             <div class="field">
               <label>Nombre (español) *</label>
-              <input v-model="nameEs" type="text" required placeholder="Ej. Thorin" />
+              <input v-model="nameEs" type="text" required placeholder="Ej. Thorin" @blur="touchedName = true" />
+              <p v-if="nameFieldError" class="field-error">{{ nameFieldError }}</p>
             </div>
             <div class="field">
               <label>Nombre (inglés)</label>
@@ -440,6 +475,7 @@ watch(
               <input v-model.number="abilities[key]" type="number" min="8" max="20" step="1" />
             </div>
           </div>
+          <p v-if="abilitiesFieldError" class="field-error">{{ abilitiesFieldError }}</p>
         </section>
 
         <!-- 3. Trasfondo y alineamiento -->
@@ -504,6 +540,7 @@ watch(
               {{ skillLabelByKey[key] || key }}
             </button>
           </div>
+          <p v-if="skillsFieldError" class="field-error">{{ skillsFieldError }}</p>
         </section>
 
         <!-- 6. Resumen final -->
@@ -534,7 +571,7 @@ watch(
         </section>
 
         <div class="actions">
-          <button type="button" class="btn ghost" @click="clearDraft">Borrar borrador</button>
+          <button type="button" class="btn ghost" @click="clearDraftFromButton">Borrar borrador</button>
           <button type="button" class="btn ghost" @click="back">Cancelar</button>
           <button type="submit" class="btn primary" :disabled="sending || !canSubmit">
             {{ sending ? 'Creando...' : 'Crear personaje' }}
@@ -594,8 +631,8 @@ watch(
   width: 36px;
   height: 36px;
   margin: 0 auto 0.75rem;
-  border: 3px solid rgba(201, 162, 39, 0.2);
-  border-top-color: #c9a227;
+  border: 3px solid rgba(45, 212, 191, 0.18);
+  border-top-color: var(--arcane);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -637,6 +674,11 @@ watch(
   font-size: 0.85rem;
   color: var(--ink-muted);
   font-weight: 600;
+}
+.field-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.82rem;
 }
 .field input,
 .field select,
@@ -695,7 +737,7 @@ watch(
 }
 .method-btn.active {
   border-color: var(--accent-gold);
-  background: rgba(184, 134, 11, 0.15);
+  background: rgba(45, 212, 191, 0.1);
   color: var(--accent-gold);
 }
 .abilities-grid {
@@ -741,7 +783,7 @@ watch(
 }
 .chip.active {
   border-color: var(--accent-gold);
-  background: rgba(184, 134, 11, 0.2);
+  background: rgba(45, 212, 191, 0.14);
   color: var(--accent-gold);
 }
 

@@ -245,10 +245,10 @@ function back() {
 }
 
 .error-msg {
-  color: #f87171;
+  color: var(--danger);
   padding: 1rem 1.25rem;
-  background: rgba(248, 113, 113, 0.08);
-  border-radius: 6px;
+  background: var(--danger-dim);
+  border-radius: 8px;
   border: 1px solid rgba(248, 113, 113, 0.25);
 }
 
@@ -344,9 +344,9 @@ function back() {
 }
 
 .btn-primary {
-  background: linear-gradient(180deg, rgba(181, 123, 238, 0.35) 0%, rgba(181, 123, 238, 0.2) 100%);
-  color: var(--text-primary);
-  border-color: var(--arcane-blue-dim);
+  background: rgba(45, 212, 191, 0.14);
+  color: var(--arcane);
+  border-color: rgba(45, 212, 191, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -366,13 +366,13 @@ function back() {
 
 .btn-danger {
   background: transparent;
-  color: #f87171;
-  border-color: rgba(248, 113, 113, 0.4);
+  color: var(--danger);
+  border-color: rgba(248, 113, 113, 0.35);
 }
 
 .btn-danger:hover:not(:disabled) {
-  box-shadow: var(--glow-fire);
-  background: rgba(248, 113, 113, 0.08);
+  box-shadow: var(--danger-glow);
+  background: var(--danger-dim);
 }
 
 .btn-sm {
@@ -410,13 +410,13 @@ function back() {
   padding: 0.75rem;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 6px;
-  border: 1px solid rgba(155, 114, 212, 0.14);
+  border: 1px solid rgba(167, 139, 250, 0.14);
   transition: box-shadow var(--ease-mist), border-color var(--ease-mist);
 }
 
 .ability-card:hover {
-  box-shadow: 0 0 16px rgba(155, 114, 212, 0.2);
-  border-color: rgba(155, 114, 212, 0.3);
+  box-shadow: 0 0 12px rgba(167, 139, 250, 0.18);
+  border-color: rgba(167, 139, 250, 0.3);
 }
 
 .ability-name {

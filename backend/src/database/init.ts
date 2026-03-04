@@ -188,6 +188,97 @@ export async function initializeDatabase() {
 
     await pool.query(`ALTER TABLE game_stats ADD COLUMN IF NOT EXISTS concentrating_on TEXT;`).catch(() => {});
 
+    // ===== ENCOUNTERS / COMBAT TRACKER =====
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS encounters (
+        id UUID PRIMARY KEY,
+        campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'paused', 'finished')),
+        round INT NOT NULL DEFAULT 1,
+        active_index INT NOT NULL DEFAULT 0,
+        created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('✓ Tabla encounters creada');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS encounter_combatants (
+        id UUID PRIMARY KEY,
+        encounter_id UUID NOT NULL REFERENCES encounters(id) ON DELETE CASCADE,
+        kind VARCHAR(20) NOT NULL CHECK (kind IN ('character', 'monster', 'custom')),
+        ref_id VARCHAR(100),
+        name VARCHAR(255) NOT NULL,
+        initiative INT NOT NULL DEFAULT 0,
+        hp_current INT NOT NULL DEFAULT 1,
+        hp_max INT NOT NULL DEFAULT 1,
+        ac INT,
+        concentrating_on TEXT,
+        is_hidden BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('✓ Tabla encounter_combatants creada');
+    await pool.query(`ALTER TABLE encounter_combatants ADD COLUMN IF NOT EXISTS concentrating_on TEXT;`).catch(() => {});
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS encounter_events (
+        id UUID PRIMARY KEY,
+        encounter_id UUID NOT NULL REFERENCES encounters(id) ON DELETE CASCADE,
+        actor_combatant_id UUID REFERENCES encounter_combatants(id) ON DELETE SET NULL,
+        target_combatant_id UUID REFERENCES encounter_combatants(id) ON DELETE SET NULL,
+        action_type VARCHAR(30) NOT NULL,
+        payload JSONB NOT NULL DEFAULT '{}',
+        created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('✓ Tabla encounter_events creada');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS encounter_combatant_conditions (
+        id UUID PRIMARY KEY,
+        encounter_id UUID NOT NULL REFERENCES encounters(id) ON DELETE CASCADE,
+        combatant_id UUID NOT NULL REFERENCES encounter_combatants(id) ON DELETE CASCADE,
+        condition_name VARCHAR(120) NOT NULL,
+        rounds_remaining INT NOT NULL CHECK (rounds_remaining > 0),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('✓ Tabla encounter_combatant_conditions creada');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS encounter_templates (
+        id UUID PRIMARY KEY,
+        campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        items JSONB NOT NULL DEFAULT '[]',
+        created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('✓ Tabla encounter_templates creada');
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS encounter_snapshots (
+        id UUID PRIMARY KEY,
+        encounter_id UUID NOT NULL REFERENCES encounters(id) ON DELETE CASCADE,
+        campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL,
+        note TEXT,
+        summary JSONB NOT NULL DEFAULT '{}',
+        payload JSONB NOT NULL DEFAULT '{}',
+        created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('✓ Tabla encounter_snapshots creada');
+
     // Condiciones activas del personaje en partida (estados: envenenado, concentrando, etc.)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS character_conditions (
@@ -344,6 +435,14 @@ export async function initializeDatabase() {
       CREATE INDEX IF NOT EXISTS idx_campaign_invites_expires_at ON campaign_invites(expires_at);
       CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
       CREATE INDEX IF NOT EXISTS idx_notifications_read_at ON notifications(read_at);
+      CREATE INDEX IF NOT EXISTS idx_encounters_campaign_id ON encounters(campaign_id);
+      CREATE INDEX IF NOT EXISTS idx_encounter_combatants_encounter_id ON encounter_combatants(encounter_id);
+      CREATE INDEX IF NOT EXISTS idx_encounter_events_encounter_id ON encounter_events(encounter_id);
+      CREATE INDEX IF NOT EXISTS idx_encounter_conditions_encounter_id ON encounter_combatant_conditions(encounter_id);
+      CREATE INDEX IF NOT EXISTS idx_encounter_conditions_combatant_id ON encounter_combatant_conditions(combatant_id);
+      CREATE INDEX IF NOT EXISTS idx_encounter_templates_campaign_id ON encounter_templates(campaign_id);
+      CREATE INDEX IF NOT EXISTS idx_encounter_snapshots_encounter_id ON encounter_snapshots(encounter_id);
+      CREATE INDEX IF NOT EXISTS idx_encounter_snapshots_campaign_id ON encounter_snapshots(campaign_id);
       CREATE INDEX IF NOT EXISTS idx_game_stats_character_id ON game_stats(character_id);
       CREATE INDEX IF NOT EXISTS idx_character_conditions_character_id ON character_conditions(character_id);
       CREATE INDEX IF NOT EXISTS idx_character_inventory_character_id ON character_inventory(character_id);

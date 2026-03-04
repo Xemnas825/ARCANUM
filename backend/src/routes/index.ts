@@ -3,6 +3,7 @@ import * as authController from '../controllers/authController.js';
 import * as characterController from '../controllers/characterController.js';
 import * as campaignController from '../controllers/campaignController.js';
 import * as notificationController from '../controllers/notificationController.js';
+import * as encounterController from '../controllers/encounterController.js';
 import * as dndController from '../controllers/dndController.js';
 import * as contentController from '../controllers/contentController.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -76,6 +77,27 @@ router.post('/campaigns/:id/invite-links/:token/revoke', requireAuth, requireCam
 router.get('/campaigns/:id/members', requireAuth, requireCampaignMember, campaignController.getMembers);
 router.post('/campaigns/:id/members', requireAuth, requireCampaignMaster, campaignController.addMember);
 router.get('/campaigns/:id/characters', requireAuth, requireCampaignMember, campaignController.getCampaignCharacters);
+
+// ===== COMBAT TRACKER (ENCOUNTERS) =====
+router.get('/campaigns/:id/encounters', requireAuth, requireCampaignMember, encounterController.listEncounters);
+router.post('/campaigns/:id/encounters', requireAuth, requireCampaignMaster, encounterController.createEncounter);
+router.get('/campaigns/:id/encounter-templates', requireAuth, requireCampaignMaster, encounterController.listEncounterTemplates);
+router.post('/campaigns/:id/encounter-templates', requireAuth, requireCampaignMaster, encounterController.createEncounterTemplate);
+router.delete('/campaigns/:id/encounter-templates/:templateId', requireAuth, requireCampaignMaster, encounterController.deleteEncounterTemplate);
+router.post('/campaigns/:id/encounter-templates/:templateId/apply/:encounterId', requireAuth, requireCampaignMaster, encounterController.applyEncounterTemplate);
+router.get('/campaigns/:id/encounters/:encounterId', requireAuth, requireCampaignMember, encounterController.getEncounter);
+router.post('/campaigns/:id/encounters/:encounterId/combatants', requireAuth, requireCampaignMaster, encounterController.addCombatant);
+router.patch('/campaigns/:id/encounters/:encounterId/combatants/:combatantId', requireAuth, requireCampaignMaster, encounterController.updateCombatant);
+router.delete('/campaigns/:id/encounters/:encounterId/combatants/:combatantId', requireAuth, requireCampaignMaster, encounterController.removeCombatant);
+router.delete('/campaigns/:id/encounters/:encounterId/combatants/:combatantId/conditions/:conditionId', requireAuth, requireCampaignMaster, encounterController.removeCombatantCondition);
+router.post('/campaigns/:id/encounters/:encounterId/next-turn', requireAuth, requireCampaignMaster, encounterController.nextTurn);
+router.patch('/campaigns/:id/encounters/:encounterId', requireAuth, requireCampaignMaster, encounterController.updateEncounter);
+router.post('/campaigns/:id/encounters/:encounterId/reset', requireAuth, requireCampaignMaster, encounterController.resetEncounterProgress);
+router.get('/campaigns/:id/encounters/:encounterId/events', requireAuth, requireCampaignMember, encounterController.listEncounterEvents);
+router.post('/campaigns/:id/encounters/:encounterId/actions', requireAuth, requireCampaignMaster, encounterController.createEncounterAction);
+router.get('/campaigns/:id/encounters/:encounterId/snapshots', requireAuth, requireCampaignMember, encounterController.listEncounterSnapshots);
+router.post('/campaigns/:id/encounters/:encounterId/snapshots', requireAuth, requireCampaignMaster, encounterController.createEncounterSnapshot);
+router.get('/campaigns/:id/encounters/:encounterId/snapshots/:snapshotId', requireAuth, requireCampaignMember, encounterController.getEncounterSnapshot);
 
 // ===== NOTIFICACIONES IN-APP =====
 router.get('/notifications', requireAuth, notificationController.listNotifications);

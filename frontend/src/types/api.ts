@@ -243,3 +243,121 @@ export interface NotificationDto {
   read_at: string | null;
   created_at: string;
 }
+
+export interface EncounterDto {
+  id: string;
+  campaign_id: string;
+  name: string;
+  status: 'active' | 'paused' | 'finished';
+  round: number;
+  active_index: number;
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EncounterTemplateDto {
+  id: string;
+  campaign_id: string;
+  name: string;
+  items: Array<{
+    kind: 'character' | 'monster' | 'custom';
+    refId?: string | null;
+    name?: string;
+    initiative?: number;
+    hpCurrent?: number;
+    hpMax?: number;
+    ac?: number | null;
+    isHidden?: boolean;
+    concentratingOn?: string | null;
+  }>;
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EncounterSnapshotDto {
+  id: string;
+  encounter_id: string;
+  campaign_id: string;
+  title: string;
+  note?: string | null;
+  summary: {
+    round: number;
+    status: string;
+    combatantsTotal: number;
+    aliveCount: number;
+    downCount: number;
+    eventsCount: number;
+  };
+  payload?: {
+    encounter: Record<string, unknown>;
+    combatants: Array<Record<string, unknown>>;
+    events: Array<Record<string, unknown>>;
+  };
+  created_by: number;
+  created_at: string;
+}
+
+export interface EncounterCombatantDto {
+  id: string;
+  encounter_id: string;
+  kind: 'character' | 'monster' | 'custom';
+  ref_id?: string | null;
+  name: string;
+  initiative: number;
+  hp_current: number;
+  hp_max: number;
+  ac?: number | null;
+  concentrating_on?: string | null;
+  is_hidden: boolean;
+  conditions?: EncounterCombatantConditionDto[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EncounterCombatantConditionDto {
+  id: string;
+  encounter_id: string;
+  combatant_id: string;
+  condition_name: string;
+  rounds_remaining: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EncounterDetailDto extends EncounterDto {
+  combatants: EncounterCombatantDto[];
+}
+
+export type EncounterActionType = 'attack' | 'damage' | 'heal' | 'save' | 'condition' | 'concentration' | 'note';
+
+export interface EncounterEventDto {
+  id: string;
+  encounter_id: string;
+  actor_combatant_id?: string | null;
+  target_combatant_id?: string | null;
+  action_type: EncounterActionType;
+  payload: {
+    amount?: number;
+    dc?: number;
+    success?: boolean;
+    condition?: string;
+    durationRounds?: number;
+    expired?: boolean;
+    note?: string;
+    hpBefore?: number;
+    hpAfter?: number;
+    spell?: string;
+    cleared?: boolean;
+    concentrationCheck?: {
+      required: boolean;
+      dc: number;
+      spell?: string;
+    };
+  };
+  created_by: number;
+  created_at: string;
+  actor_name?: string | null;
+  target_name?: string | null;
+}
