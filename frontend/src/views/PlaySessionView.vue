@@ -40,6 +40,8 @@ const conditionToAdd = ref('');
 const combatLogNote = ref('');
 
 const id = computed(() => route.params.id as string);
+const campaignIdFromQuery = computed(() => (route.query.campaignId as string) || '');
+const isDMView = computed(() => sheet.value?.viewerRole === 'master');
 
 type InitiativeEntry = { id: string; name: string; initiative: number };
 const initiativeList = ref<InitiativeEntry[]>([]);
@@ -437,6 +439,11 @@ function exportCombatLog() {
 function back() { router.push('/personajes'); }
 function goSheet() { router.push(`/personajes/${id.value}`); }
 
+function backToParty() {
+  if (campaignIdFromQuery.value) router.push(`/campanas/${campaignIdFromQuery.value}/grupo`);
+  else back();
+}
+
 watch(
   [currentHealth, maximumHealth, currentGold, inspiration, concentratingOn, spellSlotsUsed],
   () => {
@@ -452,6 +459,7 @@ watch(
   <div class="page">
     <AppHeader>
       <template #actions>
+        <button v-if="isDMView && campaignIdFromQuery" type="button" class="btn-ghost btn-sm" @click="backToParty" aria-label="Volver al panel del grupo">← Grupo</button>
         <button type="button" class="btn-ghost btn-sm" @click="goSheet" aria-label="Ver ficha del personaje">Ficha</button>
         <button type="button" class="btn-ghost btn-sm" @click="back" aria-label="Volver a personajes">← Volver</button>
       </template>
@@ -475,6 +483,16 @@ watch(
           ]"
           compact
         />
+
+        <!-- Banner modo DM: gestionando la ficha de un jugador -->
+        <div v-if="isDMView" class="dm-banner dark-card" role="status">
+          <span class="dm-banner-icon" aria-hidden="true">📖</span>
+          <div class="dm-banner-text">
+            <strong>Vista como Dungeon Master</strong>
+            <p>Estás editando la ficha de <strong>{{ sheet.nameEs }}</strong>. Los cambios (PG, oro, condiciones, inventario, slots) se guardan en tiempo real en la ficha del jugador.</p>
+          </div>
+        </div>
+
         <!-- Cabecera del personaje -->
         <header class="session-header animate-fade-in">
           <div>
@@ -759,6 +777,20 @@ watch(
   width: 100%;
 }
 
+/* Banner modo DM */
+.dm-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1rem;
+  border-left: 4px solid var(--gold-bright);
+  background: var(--gold-dim);
+}
+.dm-banner-icon { font-size: 1.4rem; line-height: 1; flex-shrink: 0; }
+.dm-banner-text strong { display: block; font-family: var(--font-data); font-size: 0.88rem; color: var(--text-primary); margin-bottom: 0.25rem; }
+.dm-banner-text p { margin: 0; font-family: var(--font-data); font-size: 0.82rem; color: var(--text-muted); line-height: 1.4; }
+
 /* Cabecera de sesión */
 .session-header { margin-bottom: 0; }
 .session-name {
@@ -834,15 +866,15 @@ watch(
 .hp-btn-dmg {
   background: var(--danger-dim);
   color: var(--danger);
-  border-color: rgba(248,113,113,0.3);
+  border-color: rgba(216, 64, 64, 0.3);
 }
 .hp-btn-dmg:hover { box-shadow: var(--danger-glow); }
 .hp-btn-heal {
   background: var(--success-dim);
   color: var(--success);
-  border-color: rgba(52,211,153,0.3);
+  border-color: rgba(90, 144, 96, 0.3);
 }
-.hp-btn-heal:hover { box-shadow: 0 0 10px rgba(52,211,153,0.2); }
+.hp-btn-heal:hover { box-shadow: 0 0 10px rgba(90, 144, 96, 0.2); }
 .rest-actions {
   display: flex;
   gap: 0.45rem;
@@ -1070,10 +1102,10 @@ watch(
   color: var(--text-primary);
   font-size: 0.9rem;
 }
-.log-damage { border-color: rgba(248,113,113,0.25); }
-.log-heal { border-color: rgba(52,211,153,0.25); }
+.log-damage { border-color: rgba(216, 64, 64, 0.25); }
+.log-heal { border-color: rgba(90, 144, 96, 0.25); }
 .log-condition { border-color: rgba(167,139,250,0.25); }
-.log-turn { border-color: rgba(45,212,191,0.25); }
+.log-turn { border-color: rgba(192, 84, 40, 0.25); }
 
 .empty-note { color: var(--text-faint); font-size: 0.9rem; margin: 0; font-style: italic; }
 
@@ -1102,7 +1134,7 @@ watch(
 }
 .btn-spinner {
   width: 14px; height: 14px;
-  border: 2px solid rgba(45,212,191,0.2);
+  border: 2px solid rgba(192, 84, 40, 0.2);
   border-top-color: var(--gold);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;

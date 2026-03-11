@@ -631,7 +631,7 @@ watch(
   width: 36px;
   height: 36px;
   margin: 0 auto 0.75rem;
-  border: 3px solid rgba(45, 212, 191, 0.18);
+  border: 3px solid rgba(192, 84, 40, 0.18);
   border-top-color: var(--arcane);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -737,7 +737,7 @@ watch(
 }
 .method-btn.active {
   border-color: var(--accent-gold);
-  background: rgba(45, 212, 191, 0.1);
+  background: rgba(192, 84, 40, 0.1);
   color: var(--accent-gold);
 }
 .abilities-grid {
@@ -783,7 +783,7 @@ watch(
 }
 .chip.active {
   border-color: var(--accent-gold);
-  background: rgba(45, 212, 191, 0.14);
+  background: rgba(192, 84, 40, 0.14);
   color: var(--accent-gold);
 }
 

@@ -4,6 +4,7 @@ import * as characterController from '../controllers/characterController.js';
 import * as campaignController from '../controllers/campaignController.js';
 import * as notificationController from '../controllers/notificationController.js';
 import * as encounterController from '../controllers/encounterController.js';
+import * as userController from '../controllers/userController.js';
 import * as dndController from '../controllers/dndController.js';
 import * as contentController from '../controllers/contentController.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -14,6 +15,10 @@ const router = Router();
 // ===== AUTENTICACIÓN =====
 router.post('/auth/register', authController.register);
 router.post('/auth/login', authController.login);
+
+// ===== PERFIL DE USUARIO =====
+router.get('/users/me', requireAuth, userController.getMe);
+router.patch('/users/me', requireAuth, userController.updateMe);
 
 // ===== OPCIONES DE CREACIÓN Y CONTENIDO (barra libre para logueados; ?campaignId= inyecta homebrew) =====
 router.get('/character-creation-options', requireAuth, contentController.getCharacterCreationOptions);
@@ -77,6 +82,7 @@ router.post('/campaigns/:id/invite-links/:token/revoke', requireAuth, requireCam
 router.get('/campaigns/:id/members', requireAuth, requireCampaignMember, campaignController.getMembers);
 router.post('/campaigns/:id/members', requireAuth, requireCampaignMaster, campaignController.addMember);
 router.get('/campaigns/:id/characters', requireAuth, requireCampaignMember, campaignController.getCampaignCharacters);
+router.get('/campaigns/:id/party', requireAuth, requireCampaignMember, userController.getCampaignParty);
 
 // ===== COMBAT TRACKER (ENCOUNTERS) =====
 router.get('/campaigns/:id/encounters', requireAuth, requireCampaignMember, encounterController.listEncounters);

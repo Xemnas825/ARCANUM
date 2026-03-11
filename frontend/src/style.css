@@ -1,115 +1,111 @@
 /* ================================================================
-   ARCANUM — "Índigo Arcano"
-   Estética: Dark modern clean, como la web de referencia
+   ARCANUM — "Terracota Arcana"
    ────────────────────────────────────────────────────────────────
-   Fondo   : índigo-negro profundo (#111120)
-   Primario: cian-teal (#2dd4bf) — interacción, focus, activos
-   Magia   : violeta claro limpio (#a78bfa)
-   D&D     : ámbar-oro (#f59e0b) — clases, objetos, niveles
-   Peligro : rojo coral (#f87171)
-   Tarjetas: ligeramente más claras con borde muy sutil
+   Filosofía: ni medieval-cliché ni SaaS-genérico.
+   Terracota como acento primario: el color del barro, la forja
+   y las ruinas antiguas. Nadie lo usa en apps, funciona perfecto.
+   Contraste frío con perinwinkle (azul-pizarra) para magia.
+   Fondos cálidos oscuros, no azul-negro de tech.
    ================================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Outfit:wght@300;400;500;600&display=swap');
 
-/* ——— Tokens de diseño ——— */
 :root {
   --font-title: 'Cinzel', serif;
-  --font-body: 'Outfit', system-ui, sans-serif;
+  --font-body: 'EB Garamond', Georgia, serif;
   --font-data: 'Outfit', system-ui, sans-serif;
 
-  /* ── Fondos: índigo-negro, como en la referencia ── */
-  --bg-stone: #111120;
-  --bg-elevated: #17162a;
-  --bg-card: #1d1c30;
-  --bg-card-hover: #242338;
-  --bg-input: #151424;
+  /* ── Fondos: negro con mínimo calor de piedra vieja ── */
+  --bg-stone:        #0d0b09;
+  --bg-elevated:     #141008;
+  --bg-card:         #1c1712;
+  --bg-card-hover:   #231e18;
+  --bg-input:        #110d08;
 
-  /* ── Texto ── */
-  --text-primary: #e4e2f6;
-  --text-muted: #8886a8;
-  --text-faint: #4a4868;
+  /* ── Texto: crema cálida ── */
+  --text-primary:  #ede4d2;
+  --text-muted:    #8a7c64;
+  --text-faint:    #4a4030;
 
-  /* ── Teal/cian: acento principal, botones, focus, activos ── */
-  --arcane: #2dd4bf;
-  --arcane-dim: rgba(45, 212, 191, 0.12);
-  --arcane-glow: 0 0 12px rgba(45, 212, 191, 0.18);
-  --arcane-glow-strong: 0 0 20px rgba(45, 212, 191, 0.28), 0 0 40px rgba(45, 212, 191, 0.08);
+  /* ── Terracota: el acento que lo hace todo ── */
+  --arcane:            #c05428;
+  --arcane-dim:        rgba(192, 84, 40, 0.13);
+  --arcane-glow:       0 0 14px rgba(192, 84, 40, 0.22);
+  --arcane-glow-strong:0 0 22px rgba(192, 84, 40, 0.34), 0 0 50px rgba(192, 84, 40, 0.08);
 
-  /* ── Dorado/ámbar: clases, objetos, rankings ── */
-  --gold: #d97706;
-  --gold-light: #f59e0b;
-  --gold-bright: #fbbf24;
-  --gold-dim: rgba(217, 119, 6, 0.14);
-  --gold-glow: 0 0 12px rgba(245, 158, 11, 0.22);
+  /* ── Oro antiguo (decorativo, rangos, iconos) ── */
+  --gold:        #a07818;
+  --gold-light:  #c09020;
+  --gold-bright: #d8a830;
+  --gold-dim:    rgba(160, 120, 24, 0.18);
+  --gold-glow:   0 0 12px rgba(192, 144, 32, 0.24);
 
-  /* ── Violeta: hechizos, magia ── */
-  --magic: #a78bfa;
-  --magic-dim: rgba(167, 139, 250, 0.12);
-  --magic-glow: 0 0 12px rgba(167, 139, 250, 0.22);
+  /* ── Perinwinkle: magia, hechizos, lo arcano ── */
+  --magic:       #7b8ecf;
+  --magic-dim:   rgba(123, 142, 207, 0.14);
+  --magic-glow:  0 0 14px rgba(123, 142, 207, 0.24);
 
-  /* ── Verde: curación, naturaleza ── */
-  --nature: #34d399;
-  --nature-dim: rgba(52, 211, 153, 0.12);
+  /* ── Salvia: naturaleza, curación ── */
+  --nature:      #5a9060;
+  --nature-dim:  rgba(90, 144, 96, 0.14);
 
-  /* ── Rojo: daño, peligro ── */
-  --danger: #f87171;
-  --danger-dim: rgba(248, 113, 113, 0.12);
-  --danger-glow: 0 0 12px rgba(248, 113, 113, 0.22);
+  /* ── Peligro: rojo distinguible del terracota ── */
+  --danger:      #d84040;
+  --danger-dim:  rgba(216, 64, 64, 0.12);
+  --danger-glow: 0 0 12px rgba(216, 64, 64, 0.24);
 
   /* ── Éxito ── */
-  --success: #34d399;
-  --success-dim: rgba(52, 211, 153, 0.12);
+  --success:     #5a9060;
+  --success-dim: rgba(90, 144, 96, 0.12);
 
   /* ── Bordes ── */
-  --border-arcane: rgba(45, 212, 191, 0.18);
-  --border-gold: rgba(245, 158, 11, 0.22);
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-steel: rgba(167, 139, 250, 0.15);
-  --border-success: rgba(52, 211, 153, 0.3);
-  --border-danger: rgba(248, 113, 113, 0.3);
+  --border-arcane:  rgba(192, 84, 40, 0.2);
+  --border-gold:    rgba(160, 120, 24, 0.28);
+  --border-subtle:  rgba(255, 255, 255, 0.055);
+  --border-steel:   rgba(123, 142, 207, 0.16);
+  --border-success: rgba(90, 144, 96, 0.36);
+  --border-danger:  rgba(216, 64, 64, 0.32);
 
-  /* ── Separador limpio ── */
+  /* ── Separador con alma ── */
   --runic-line: linear-gradient(90deg,
     transparent 0%,
-    rgba(45, 212, 191, 0.08) 20%,
-    rgba(45, 212, 191, 0.24) 50%,
-    rgba(45, 212, 191, 0.08) 80%,
+    rgba(160, 120, 24, 0.1) 18%,
+    rgba(160, 120, 24, 0.36) 50%,
+    rgba(160, 120, 24, 0.1) 82%,
     transparent 100%
   );
 
   /* ── Sombras ── */
-  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.35);
-  --shadow-raised: 0 8px 32px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(0, 0, 0, 0.4);
-  --shadow-inset: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-card:   0 2px 12px rgba(0,0,0,0.68), 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-raised: 0 8px 40px rgba(0,0,0,0.78), 0 2px 8px rgba(0,0,0,0.5);
 
-  /* ── Animaciones ── */
-  --ease-out: 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-spring: 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-quick: 0.14s ease-out;
+  /* ── Transiciones ── */
+  --ease-out:    0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-quick:  0.14s ease-out;
 
-  /* ── Alias de compatibilidad ── */
-  --parchment: var(--text-muted);
-  --parchment-dark: var(--text-primary);
-  --ink: var(--text-primary);
-  --ink-muted: var(--text-muted);
-  --accent-gold: var(--gold);
+  /* ── Alias de compatibilidad (no tocar, muchos componentes dependen) ── */
+  --parchment:         var(--text-muted);
+  --parchment-dark:    var(--text-primary);
+  --ink:               var(--text-primary);
+  --ink-muted:         var(--text-muted);
+  --accent-gold:       var(--gold);
   --accent-gold-light: var(--gold-light);
-  --accent-glow: var(--gold-dim);
-  --border-parchment: var(--border-arcane);
-  --shadow-paper: var(--shadow-card);
-  --shadow-float: var(--shadow-raised);
-  --parchment-shadow: var(--border-arcane);
-  --arcane-blue: var(--arcane);
-  --arcane-blue-dim: var(--arcane-dim);
-  --arcane-gold: var(--gold);
-  --arcane-gold-dim: var(--gold-dim);
-  --glow-arcane: var(--arcane-glow);
+  --accent-glow:       var(--gold-dim);
+  --border-parchment:  var(--border-arcane);
+  --shadow-paper:      var(--shadow-card);
+  --shadow-float:      var(--shadow-raised);
+  --parchment-shadow:  var(--border-arcane);
+  --arcane-blue:       var(--arcane);
+  --arcane-blue-dim:   var(--arcane-dim);
+  --arcane-gold:       var(--gold);
+  --arcane-gold-dim:   var(--gold-dim);
+  --glow-arcane:       var(--arcane-glow);
   --glow-arcane-hover: var(--arcane-glow-strong);
-  --glow-gold: var(--gold-glow);
-  --glow-fire: var(--danger-glow);
-  --ease-mist: var(--ease-out);
-  --ease-pulse: var(--ease-quick);
+  --glow-gold:         var(--gold-glow);
+  --glow-fire:         var(--danger-glow);
+  --ease-mist:         var(--ease-out);
+  --ease-pulse:        var(--ease-quick);
   --bg-stone-elevated: var(--bg-elevated);
 }
 
@@ -121,16 +117,17 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family: var(--font-body);
-  font-size: 0.97rem;
-  line-height: 1.6;
+  font-size: 1.06rem;
+  line-height: 1.65;
   color: var(--text-primary);
   background-color: var(--bg-stone);
+  /* Calor tenue desde arriba, como una vela lejana */
   background-image:
-    radial-gradient(ellipse 80% 40% at 50% -5%, rgba(167, 139, 250, 0.07) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 30% at 100% 100%, rgba(45, 212, 191, 0.04) 0%, transparent 55%);
+    radial-gradient(ellipse 90% 38% at 50% 0%, rgba(192, 84, 40, 0.06) 0%, transparent 62%),
+    radial-gradient(ellipse 55% 30% at 5% 100%, rgba(123, 142, 207, 0.04) 0%, transparent 55%);
 }
 
-#app { min-height: 100vh; }
+#app  { min-height: 100vh; }
 .page { min-height: 100vh; display: flex; flex-direction: column; background: transparent; }
 main.main { background: transparent; }
 
@@ -138,36 +135,40 @@ main.main { background: transparent; }
 h1, h2, h3, .font-title {
   font-family: var(--font-title);
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   color: var(--text-primary);
   line-height: 1.2;
 }
 
-/* Títulos de sección menores en Outfit */
-h4, h5, h6 { font-family: var(--font-body); font-weight: 600; color: var(--text-primary); }
+h4, h5, h6 {
+  font-family: var(--font-data);
+  font-weight: 600;
+  color: var(--text-primary);
+}
 
 .font-data { font-family: var(--font-data); }
 
 a {
   color: var(--arcane);
   text-decoration: none;
-  transition: color var(--ease-quick), opacity var(--ease-quick);
+  transition: color var(--ease-quick);
 }
-a:hover { color: #5eeedd; opacity: 0.9; }
+a:hover { color: #d87040; }
 
 /* ——— Separador ——— */
 .runic-separator {
   height: 1px;
   border: none;
   background: var(--runic-line);
-  margin: 1.25rem 0;
+  margin: 1.2rem 0;
+  opacity: 0.8;
 }
 
 .section-title {
-  font-family: var(--font-body);
-  font-size: 0.7rem;
+  font-family: var(--font-data);
+  font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--text-muted);
   margin: 0 0 0.85rem 0;
@@ -175,29 +176,28 @@ a:hover { color: #5eeedd; opacity: 0.9; }
   border-bottom: 1px solid var(--border-subtle);
 }
 
-/* ——— Tarjetas ——— */
+/* ——— Paneles ——— */
 .dark-card,
 .parchment-panel {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  border-radius: 10px;
+  border-radius: 8px;
   box-shadow: var(--shadow-card);
   color: var(--text-primary);
   transition:
     border-color var(--ease-out),
-    box-shadow var(--ease-out),
-    transform var(--ease-out);
+    box-shadow var(--ease-out);
 }
 .dark-card:hover,
 .parchment-panel:hover {
-  border-color: rgba(45, 212, 191, 0.18);
-  box-shadow: var(--shadow-card), var(--arcane-glow);
+  border-color: rgba(192, 84, 40, 0.22);
+  box-shadow: var(--shadow-card), 0 0 0 1px rgba(192, 84, 40, 0.08);
 }
 
 /* ——— Botones ——— */
 button {
-  font-family: var(--font-body);
-  border-radius: 8px;
+  font-family: var(--font-data);
+  border-radius: 6px;
   cursor: pointer;
   border: 1px solid transparent;
   transition:
@@ -205,7 +205,7 @@ button {
     border-color var(--ease-quick),
     box-shadow var(--ease-out),
     transform var(--ease-spring),
-    filter var(--ease-quick);
+    color var(--ease-quick);
 }
 button:focus-visible {
   outline: 2px solid var(--arcane);
@@ -214,33 +214,33 @@ button:focus-visible {
 button:not(:disabled):active { transform: scale(0.97); }
 button:disabled { opacity: 0.42; cursor: not-allowed; }
 
-/* Primario teal */
+/* Terracota — CTA principal */
 .btn-arc {
-  background: rgba(45, 212, 191, 0.14);
-  color: var(--arcane);
-  border-color: rgba(45, 212, 191, 0.3);
-  padding: 0.5rem 1.1rem;
-  font-size: 0.93rem;
+  background: rgba(192, 84, 40, 0.18);
+  color: #e8885a;
+  border-color: rgba(192, 84, 40, 0.4);
+  padding: 0.52rem 1.1rem;
+  font-size: 0.9rem;
   font-weight: 500;
 }
 .btn-arc:not(:disabled):hover {
-  background: rgba(45, 212, 191, 0.2);
+  background: rgba(192, 84, 40, 0.26);
   border-color: var(--arcane);
   box-shadow: var(--arcane-glow-strong);
-  color: #a0f5ec;
+  color: #f09060;
 }
 
-/* Dorado / highlight D&D */
+/* Dorado — acción especial / destacada */
 .btn-gold {
   background: var(--gold-dim);
   color: var(--gold-bright);
   border-color: var(--border-gold);
-  padding: 0.5rem 1.1rem;
-  font-size: 0.93rem;
+  padding: 0.52rem 1.1rem;
+  font-size: 0.9rem;
   font-weight: 500;
 }
 .btn-gold:not(:disabled):hover {
-  background: rgba(245, 158, 11, 0.2);
+  background: rgba(160, 120, 24, 0.26);
   border-color: var(--gold-light);
   box-shadow: var(--gold-glow);
 }
@@ -251,97 +251,97 @@ button:disabled { opacity: 0.42; cursor: not-allowed; }
   color: var(--text-muted);
   border-color: transparent;
   padding: 0.5rem 0.9rem;
-  font-size: 0.93rem;
+  font-size: 0.9rem;
 }
 .btn-ghost:not(:disabled):hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   border-color: var(--border-subtle);
 }
 
 /* Peligro */
 .btn-danger {
   background: var(--danger-dim);
-  color: var(--danger);
-  border-color: rgba(248, 113, 113, 0.28);
+  color: #e86060;
+  border-color: rgba(216, 64, 64, 0.3);
   padding: 0.5rem 1rem;
   font-size: 0.88rem;
 }
 .btn-danger:not(:disabled):hover {
-  background: rgba(248, 113, 113, 0.18);
-  border-color: rgba(248, 113, 113, 0.5);
+  background: rgba(216, 64, 64, 0.2);
+  border-color: rgba(216, 64, 64, 0.52);
   box-shadow: var(--danger-glow);
 }
 
-/* Tamaños */
-.btn-sm { padding: 0.3rem 0.65rem !important; font-size: 0.8rem !important; border-radius: 6px !important; }
-.btn-lg { padding: 0.7rem 1.75rem !important; font-size: 1rem !important; }
+.btn-sm { padding: 0.3rem 0.65rem !important; font-size: 0.8rem !important; }
+.btn-lg { padding: 0.7rem 1.8rem !important; font-size: 1rem !important; letter-spacing: 0.03em !important; }
 
 /* ——— Inputs ——— */
 input, select, textarea {
-  font-family: var(--font-body);
+  font-family: var(--font-data);
   background: var(--bg-input);
   border: 1px solid var(--border-subtle);
-  border-radius: 8px;
+  border-radius: 6px;
   color: var(--text-primary);
   padding: 0.52rem 0.85rem;
-  font-size: 0.93rem;
+  font-size: 0.9rem;
   transition: border-color var(--ease-quick), box-shadow var(--ease-quick);
 }
 input::placeholder, textarea::placeholder { color: var(--text-faint); }
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: rgba(45, 212, 191, 0.45);
-  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.1);
+  border-color: rgba(192, 84, 40, 0.5);
+  box-shadow: 0 0 0 3px rgba(192, 84, 40, 0.1);
 }
 select { appearance: none; cursor: pointer; }
 
-/* ——— Chips / Badges ——— */
+/* ——— Badges / Chips ——— */
 .badge {
   display: inline-flex;
   align-items: center;
-  font-family: var(--font-body);
-  font-size: 0.7rem;
+  font-family: var(--font-data);
+  font-size: 0.68rem;
   font-weight: 500;
-  letter-spacing: 0.04em;
-  padding: 0.2rem 0.55rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.55rem;
   border-radius: 99px;
   line-height: 1.4;
   white-space: nowrap;
 }
-.badge-arcane { background: var(--magic-dim); color: var(--magic); border: 1px solid rgba(167,139,250,0.28); }
-.badge-gold   { background: var(--gold-dim);   color: var(--gold-bright); border: 1px solid rgba(245,158,11,0.28); }
-.badge-nature { background: var(--nature-dim); color: var(--nature); border: 1px solid rgba(52,211,153,0.28); }
-.badge-danger { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(248,113,113,0.28); }
-.badge-ember  { background: var(--arcane-dim); color: var(--arcane); border: 1px solid rgba(45,212,191,0.28); }
+.badge-arcane { background: var(--magic-dim);  color: #9cacdf; border: 1px solid rgba(123,142,207,0.28); }
+.badge-gold   { background: var(--gold-dim);   color: var(--gold-bright); border: 1px solid rgba(160,120,24,0.3); }
+.badge-nature { background: var(--nature-dim); color: #72b078; border: 1px solid rgba(90,144,96,0.3); }
+.badge-danger { background: var(--danger-dim); color: #e86060; border: 1px solid rgba(216,64,64,0.3); }
+.badge-ember  { background: var(--arcane-dim); color: #d07050; border: 1px solid rgba(192,84,40,0.3); }
 
 /* ——— Loading / Error ——— */
 .loader-wrap { text-align: center; padding: 4rem 2rem; color: var(--text-muted); }
 .loader {
   width: 36px; height: 36px;
   margin: 0 auto 1rem;
-  border: 2px solid rgba(45, 212, 191, 0.14);
+  border: 2px solid rgba(192, 84, 40, 0.15);
   border-top-color: var(--arcane);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 0.85s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .error-banner {
-  color: var(--danger);
+  color: #e86060;
   background: var(--danger-dim);
-  border: 1px solid rgba(248, 113, 113, 0.24);
-  border-radius: 8px;
+  border: 1px solid rgba(216, 64, 64, 0.24);
+  border-radius: 6px;
   padding: 0.75rem 1rem;
-  font-size: 0.93rem;
+  font-size: 0.95rem;
 }
 .success-banner {
-  color: var(--nature);
-  background: var(--nature-dim);
-  border: 1px solid rgba(52, 211, 153, 0.24);
-  border-radius: 8px;
+  color: #72b078;
+  background: var(--success-dim);
+  border: 1px solid rgba(90, 144, 96, 0.24);
+  border-radius: 6px;
   padding: 0.75rem 1rem;
-  font-size: 0.93rem;
+  font-size: 0.95rem;
 }
 
 /* ——— Animaciones ——— */
@@ -359,18 +359,18 @@ select { appearance: none; cursor: pointer; }
 }
 @keyframes shimmer {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  50% { opacity: 0.62; }
 }
 @keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0.38); }
-  70%  { box-shadow: 0 0 0 8px rgba(45, 212, 191, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(45, 212, 191, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(192, 84, 40, 0.4); }
+  70%  { box-shadow: 0 0 0 7px rgba(192, 84, 40, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(192, 84, 40, 0); }
 }
 @keyframes gradientShift {
   0%, 100% { background-position: 0% center; }
   50%       { background-position: 100% center; }
 }
 
-.animate-fade-in       { animation: fadeIn 0.4s var(--ease-out) both; }
-.animate-fade-in-scale { animation: fadeInScale 0.36s var(--ease-out) both; }
-.animate-card-in       { animation: cardIn 0.38s var(--ease-out) both; }
+.animate-fade-in       { animation: fadeIn 0.42s var(--ease-out) both; }
+.animate-fade-in-scale { animation: fadeInScale 0.38s var(--ease-out) both; }
+.animate-card-in       { animation: cardIn 0.40s var(--ease-out) both; }

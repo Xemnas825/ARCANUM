@@ -129,6 +129,11 @@ function goCombatTracker() {
   router.push(`/campanas/${campaignId.value}/combate`);
 }
 
+function goParty() {
+  if (!campaignId.value) return;
+  router.push(`/campanas/${campaignId.value}/grupo`);
+}
+
 async function createInviteLink() {
   if (!campaignId.value) return;
   creatingInvite.value = true;
@@ -242,7 +247,8 @@ function logout() {
                 {{ campaignsStore.current.role === 'master' ? 'Máster' : 'Jugador' }}
               </span>
               <button v-if="isMaster" type="button" class="btn-ghost btn-sm" @click="startEdit" aria-label="Editar campaña">Editar</button>
-              <button type="button" class="btn-gold btn-sm" @click="goCombatTracker">Combat Tracker</button>
+              <button type="button" class="btn-arc btn-sm" @click="goParty">👥 Grupo</button>
+              <button type="button" class="btn-gold btn-sm" @click="goCombatTracker">⚔️ Combat Tracker</button>
             </div>
             <form v-else class="edit-form" @submit.prevent="saveEdit">
               <input v-model="editName" type="text" required placeholder="Nombre de la campaña" aria-label="Nombre" />
@@ -456,7 +462,7 @@ function logout() {
   align-items: center;
   flex-wrap: wrap;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(248,113,113,0.15);
+  border-top: 1px solid rgba(216, 64, 64, 0.15);
 }
 
 /* Grid de detalle */
@@ -493,7 +499,7 @@ function logout() {
   cursor: pointer;
   transition: background var(--ease-quick), border-color var(--ease-quick);
 }
-.char-item:hover { background: rgba(45,212,191,0.05); border-color: var(--border-arcane); }
+.char-item:hover { background: rgba(192, 84, 40, 0.05); border-color: var(--border-arcane); }
 .char-item:focus-visible { outline: 2px solid var(--arcane); outline-offset: 2px; }
 .char-icon { color: var(--arcane); opacity: 0.5; font-size: 0.9rem; flex-shrink: 0; }
 .char-details { flex: 1; min-width: 0; }

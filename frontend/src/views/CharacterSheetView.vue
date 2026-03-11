@@ -17,6 +17,16 @@ const editNameEn = ref('');
 const savingName = ref(false);
 const deleting = ref(false);
 
+// Edición de personalidad
+const editingPersonality = ref(false);
+const editIdeals  = ref('');
+const editBonds   = ref('');
+const editFlaws   = ref('');
+const savingPersonality = ref(false);
+
+// Subir nivel
+const levelingUp = ref(false);
+
 const id = computed(() => route.params.id as string);
 const displayName = computed(() => {
   if (!sheet.value) return '';
@@ -105,6 +115,62 @@ async function confirmDelete() {
 function back() {
   router.push('/personajes');
 }
+
+function startEditPersonality() {
+  if (!sheet.value) return;
+  editIdeals.value = sheet.value.personality?.ideals ?? '';
+  editBonds.value  = sheet.value.personality?.bonds  ?? '';
+  editFlaws.value  = sheet.value.personality?.flaws  ?? '';
+  editingPersonality.value = true;
+}
+
+function cancelEditPersonality() {
+  editingPersonality.value = false;
+}
+
+async function savePersonality() {
+  savingPersonality.value = true;
+  error.value = '';
+  try {
+    await api.patch(`/characters/${id.value}`, {
+      personality: {
+        ideals: editIdeals.value.trim() || null,
+        bonds:  editBonds.value.trim()  || null,
+        flaws:  editFlaws.value.trim()  || null,
+      },
+    });
+    if (sheet.value) {
+      sheet.value = {
+        ...sheet.value,
+        personality: {
+          ideals: editIdeals.value.trim() || null,
+          bonds:  editBonds.value.trim()  || null,
+          flaws:  editFlaws.value.trim()  || null,
+        },
+      };
+    }
+    editingPersonality.value = false;
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Error al guardar';
+  } finally {
+    savingPersonality.value = false;
+  }
+}
+
+async function levelUp() {
+  if (!sheet.value) return;
+  if (sheet.value.level >= 20) { error.value = 'Tu personaje ya ha alcanzado el nivel máximo (20).'; return; }
+  if (!window.confirm(`¿Subir a ${sheet.value.nameEs} al nivel ${sheet.value.level + 1}?`)) return;
+  levelingUp.value = true;
+  try {
+    await api.patch(`/characters/${id.value}`, { level: sheet.value.level + 1 });
+    await loadSheet();
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Error al subir de nivel';
+  } finally {
+    levelingUp.value = false;
+  }
+}
 </script>
 
 <template>
@@ -147,14 +213,23 @@ function back() {
             </p>
           </div>
           <div class="sheet-header-actions">
-            <router-link :to="`/personajes/${sheet.id}/partida`" class="btn btn-primary">En partida</router-link>
+            <button
+              type="button"
+              class="btn btn-primary"
+              :disabled="levelingUp || sheet.level >= 20"
+              :title="sheet.level >= 20 ? 'Nivel máximo alcanzado' : `Subir al nivel ${sheet.level + 1}`"
+              @click="levelUp"
+            >
+              {{ levelingUp ? '…' : `↑ Nv ${sheet.level + 1}` }}
+            </button>
+            <router-link :to="`/personajes/${sheet.id}/partida`" class="btn btn-primary">▶ En partida</router-link>
             <button
               type="button"
               class="btn btn-danger"
               :disabled="deleting"
               @click="confirmDelete"
             >
-              {{ deleting ? '…' : 'Eliminar personaje' }}
+              {{ deleting ? '…' : 'Eliminar' }}
             </button>
           </div>
         </header>
@@ -191,24 +266,58 @@ function back() {
           </div>
         </div>
 
-        <section
-          v-if="sheet.personality && ((sheet.personality as { ideals?: string }).ideals || (sheet.personality as { bonds?: string }).bonds || (sheet.personality as { flaws?: string }).flaws)"
-          class="panel dark-card personality"
-        >
-          <h3 class="section-title">Personalidad</h3>
-          <div class="personality-grid">
-            <div v-if="(sheet.personality as { ideals?: string }).ideals" class="personality-item">
+        <!-- Personalidad (vista + edición inline) -->
+        <section class="panel dark-card personality">
+          <div class="section-header-row">
+            <h3 class="section-title" style="margin:0">Personalidad &amp; trasfondo</h3>
+            <button
+              v-if="!editingPersonality"
+              type="button"
+              class="btn btn-ghost btn-sm"
+              @click="startEditPersonality"
+            >✎ Editar</button>
+          </div>
+
+          <!-- Modo edición -->
+          <div v-if="editingPersonality" class="personality-edit-form">
+            <div class="pers-field">
+              <label class="pers-label">Ideales</label>
+              <textarea v-model="editIdeals" rows="2" placeholder="¿Qué principios guían a tu personaje?" />
+            </div>
+            <div class="pers-field">
+              <label class="pers-label">Vínculos</label>
+              <textarea v-model="editBonds" rows="2" placeholder="¿Qué o quién le importa más?" />
+            </div>
+            <div class="pers-field">
+              <label class="pers-label">Defectos</label>
+              <textarea v-model="editFlaws" rows="2" placeholder="¿Cuáles son sus debilidades o vicios?" />
+            </div>
+            <div class="pers-actions">
+              <button type="button" class="btn btn-ghost btn-sm" @click="cancelEditPersonality" :disabled="savingPersonality">Cancelar</button>
+              <button type="button" class="btn btn-primary btn-sm" @click="savePersonality" :disabled="savingPersonality">
+                {{ savingPersonality ? 'Guardando…' : 'Guardar' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Modo visualización -->
+          <div v-else class="personality-grid">
+            <div v-if="sheet.personality?.ideals" class="personality-item">
               <strong>Ideales</strong>
-              <p>{{ (sheet.personality as { ideals: string }).ideals }}</p>
+              <p>{{ sheet.personality.ideals }}</p>
             </div>
-            <div v-if="(sheet.personality as { bonds?: string }).bonds" class="personality-item">
+            <div v-if="sheet.personality?.bonds" class="personality-item">
               <strong>Vínculos</strong>
-              <p>{{ (sheet.personality as { bonds: string }).bonds }}</p>
+              <p>{{ sheet.personality.bonds }}</p>
             </div>
-            <div v-if="(sheet.personality as { flaws?: string }).flaws" class="personality-item">
+            <div v-if="sheet.personality?.flaws" class="personality-item">
               <strong>Defectos</strong>
-              <p>{{ (sheet.personality as { flaws: string }).flaws }}</p>
+              <p>{{ sheet.personality.flaws }}</p>
             </div>
+            <p v-if="!sheet.personality?.ideals && !sheet.personality?.bonds && !sheet.personality?.flaws"
+               class="empty-personality">
+              Sin trasfondo escrito aún. Pulsa "Editar" para añadirlo.
+            </p>
           </div>
         </section>
       </div>
@@ -249,7 +358,7 @@ function back() {
   padding: 1rem 1.25rem;
   background: var(--danger-dim);
   border-radius: 8px;
-  border: 1px solid rgba(248, 113, 113, 0.25);
+  border: 1px solid rgba(216, 64, 64, 0.25);
 }
 
 /* Cabecera */
@@ -344,9 +453,9 @@ function back() {
 }
 
 .btn-primary {
-  background: rgba(45, 212, 191, 0.14);
+  background: rgba(192, 84, 40, 0.14);
   color: var(--arcane);
-  border-color: rgba(45, 212, 191, 0.3);
+  border-color: rgba(192, 84, 40, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -367,7 +476,7 @@ function back() {
 .btn-danger {
   background: transparent;
   color: var(--danger);
-  border-color: rgba(248, 113, 113, 0.35);
+  border-color: rgba(216, 64, 64, 0.35);
 }
 
 .btn-danger:hover:not(:disabled) {
@@ -410,13 +519,13 @@ function back() {
   padding: 0.75rem;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 6px;
-  border: 1px solid rgba(167, 139, 250, 0.14);
+  border: 1px solid rgba(123, 142, 207, 0.14);
   transition: box-shadow var(--ease-mist), border-color var(--ease-mist);
 }
 
 .ability-card:hover {
-  box-shadow: 0 0 12px rgba(167, 139, 250, 0.18);
-  border-color: rgba(167, 139, 250, 0.3);
+  box-shadow: 0 0 12px rgba(123, 142, 207, 0.18);
+  border-color: rgba(123, 142, 207, 0.3);
 }
 
 .ability-name {
@@ -482,4 +591,31 @@ function back() {
   color: var(--text-primary);
   white-space: pre-wrap;
 }
+
+.section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+}
+
+.empty-personality {
+  color: var(--text-faint);
+  font-style: italic;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.personality-edit-form { display: flex; flex-direction: column; gap: 0.7rem; }
+.pers-field { display: flex; flex-direction: column; gap: 0.25rem; }
+.pers-label {
+  font-family: var(--font-data);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.pers-field textarea { width: 100%; resize: vertical; min-height: 56px; }
+.pers-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
 </style>

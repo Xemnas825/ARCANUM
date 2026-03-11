@@ -10,6 +10,7 @@ export interface RegisterBody {
   username: string;
   email: string;
   password: string;
+  role?: 'player' | 'dm';
 }
 
 export interface LoginBody {
@@ -20,7 +21,7 @@ export interface LoginBody {
 /** POST /api/auth/register */
 export async function register(req: Request, res: Response) {
   try {
-    const { username, email, password } = req.body as RegisterBody;
+    const { username, email, password, role } = req.body as RegisterBody;
 
     if (!username?.trim() || !email?.trim() || !password) {
       res.status(400).json({ error: 'Faltan usuario, email o contraseña' });
@@ -32,11 +33,12 @@ export async function register(req: Request, res: Response) {
       return;
     }
 
+    const validRole = role === 'dm' ? 'dm' : 'player';
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     const result = await pool.query(
-      `INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email, created_at`,
-      [username.trim(), email.trim().toLowerCase(), hashedPassword]
+      `INSERT INTO users (username, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, username, email, role, created_at`,
+      [username.trim(), email.trim().toLowerCase(), hashedPassword, validRole]
     );
 
     const user = result.rows[0];
@@ -51,6 +53,7 @@ export async function register(req: Request, res: Response) {
         id: user.id,
         username: user.username,
         email: user.email,
+        role: user.role,
       },
       token,
     });
@@ -79,7 +82,7 @@ export async function login(req: Request, res: Response) {
     // Aceptar usuario o correo: si contiene @ es correo, si no es usuario
     const isEmail = loginInput.includes('@');
     const result = await pool.query(
-      `SELECT id, username, email, password FROM users WHERE ${isEmail ? 'LOWER(email) = LOWER($1)' : 'LOWER(username) = LOWER($1)'}`,
+      `SELECT id, username, email, password, role FROM users WHERE ${isEmail ? 'LOWER(email) = LOWER($1)' : 'LOWER(username) = LOWER($1)'}`,
       [loginInput]
     );
 
@@ -106,6 +109,7 @@ export async function login(req: Request, res: Response) {
         id: user.id,
         username: user.username,
         email: user.email,
+        role: user.role ?? 'player',
       },
       token,
     });

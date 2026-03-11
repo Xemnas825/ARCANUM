@@ -74,6 +74,18 @@ const router = createRouter({
       component: () => import('../views/InviteJoinView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/perfil',
+      name: 'Perfil',
+      component: () => import('../views/ProfileView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/campanas/:id/grupo',
+      name: 'GrupoCampana',
+      component: () => import('../views/PartyDashboardView.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 });
 

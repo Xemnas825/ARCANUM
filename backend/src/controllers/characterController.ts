@@ -9,6 +9,23 @@ import { getClassSkillChoicesCount } from '../constants/characterCreation.js';
 import { buildCharacterSheet, type CharacterRow, type AbilitiesRow, type GameStatsRow } from '../services/characterSheetService.js';
 import type { AuthRequest } from '../middleware/auth.js';
 
+/** Comprueba si el usuario puede editar el personaje (propietario o DM de la campaña). */
+async function canEditCharacter(characterId: string, userId: number): Promise<boolean> {
+  const char = await pool.query(
+    `SELECT user_id, campaign_id FROM characters WHERE id = $1`,
+    [characterId]
+  );
+  if (char.rows.length === 0) return false;
+  const row = char.rows[0] as { user_id: number; campaign_id: string | null };
+  if (row.user_id === userId) return true;
+  if (!row.campaign_id) return false;
+  const master = await pool.query(
+    `SELECT 1 FROM campaign_members WHERE campaign_id = $1 AND user_id = $2 AND role = 'master'`,
+    [row.campaign_id, userId]
+  );
+  return master.rows.length > 0;
+}
+
 // ===== CREAR PERSONAJE =====
 export async function createCharacter(req: AuthRequest, res: Response) {
   try {
@@ -333,7 +350,8 @@ export async function getCharacter(req: AuthRequest, res: Response) {
       inventoryRows
     );
 
-    res.json(sheet);
+    const viewerRole = isOwner ? 'owner' : 'master';
+    res.json({ ...sheet, viewerRole });
   } catch (error) {
     console.error('Error obteniendo personaje:', error);
     res.status(500).json({ error: 'Error al obtener personaje' });
@@ -376,12 +394,13 @@ export async function updateGameStats(req: AuthRequest, res: Response) {
       return;
     }
     const { characterId } = req.params;
-    const ownerCheck = await pool.query(
-      `SELECT id FROM characters WHERE id = $1 AND user_id = $2`,
-      [characterId, authUserId]
-    );
-    if (ownerCheck.rows.length === 0) {
+    const charExists = await pool.query(`SELECT id FROM characters WHERE id = $1`, [characterId]);
+    if (charExists.rows.length === 0) {
       res.status(404).json({ error: 'Personaje no encontrado' });
+      return;
+    }
+    if (!(await canEditCharacter(characterId, authUserId))) {
+      res.status(403).json({ error: 'No puedes editar este personaje' });
       return;
     }
 
@@ -491,12 +510,13 @@ export async function setCharacterConditions(req: AuthRequest, res: Response) {
     const { id } = req.params;
     const { conditionIds } = req.body as { conditionIds?: string[] };
 
-    const owner = await pool.query(
-      `SELECT id FROM characters WHERE id = $1 AND user_id = $2`,
-      [id, authUserId]
-    );
-    if (owner.rows.length === 0) {
+    const charExists = await pool.query(`SELECT id FROM characters WHERE id = $1`, [id]);
+    if (charExists.rows.length === 0) {
       res.status(404).json({ error: 'Personaje no encontrado' });
+      return;
+    }
+    if (!(await canEditCharacter(id, authUserId))) {
+      res.status(403).json({ error: 'No puedes editar este personaje' });
       return;
     }
 
@@ -529,12 +549,13 @@ export async function addInventoryItem(req: AuthRequest, res: Response) {
     const { id } = req.params;
     const { name, quantity = 1 } = req.body as { name?: string; quantity?: number };
 
-    const owner = await pool.query(
-      `SELECT id FROM characters WHERE id = $1 AND user_id = $2`,
-      [id, authUserId]
-    );
-    if (owner.rows.length === 0) {
+    const charExists = await pool.query(`SELECT id FROM characters WHERE id = $1`, [id]);
+    if (charExists.rows.length === 0) {
       res.status(404).json({ error: 'Personaje no encontrado' });
+      return;
+    }
+    if (!(await canEditCharacter(id, authUserId))) {
+      res.status(403).json({ error: 'No puedes editar este personaje' });
       return;
     }
     if (!name || typeof name !== 'string' || !name.trim()) {
@@ -567,12 +588,13 @@ export async function updateInventoryItem(req: AuthRequest, res: Response) {
     const { id, itemId } = req.params;
     const { name, quantity } = req.body as { name?: string; quantity?: number };
 
-    const owner = await pool.query(
-      `SELECT id FROM characters WHERE id = $1 AND user_id = $2`,
-      [id, authUserId]
-    );
-    if (owner.rows.length === 0) {
+    const charExists = await pool.query(`SELECT id FROM characters WHERE id = $1`, [id]);
+    if (charExists.rows.length === 0) {
       res.status(404).json({ error: 'Personaje no encontrado' });
+      return;
+    }
+    if (!(await canEditCharacter(id, authUserId))) {
+      res.status(403).json({ error: 'No puedes editar este personaje' });
       return;
     }
 
@@ -617,12 +639,13 @@ export async function deleteInventoryItem(req: AuthRequest, res: Response) {
     }
     const { id, itemId } = req.params;
 
-    const owner = await pool.query(
-      `SELECT id FROM characters WHERE id = $1 AND user_id = $2`,
-      [id, authUserId]
-    );
-    if (owner.rows.length === 0) {
+    const charExists = await pool.query(`SELECT id FROM characters WHERE id = $1`, [id]);
+    if (charExists.rows.length === 0) {
       res.status(404).json({ error: 'Personaje no encontrado' });
+      return;
+    }
+    if (!(await canEditCharacter(id, authUserId))) {
+      res.status(403).json({ error: 'No puedes editar este personaje' });
       return;
     }
 
@@ -653,6 +676,7 @@ export async function updateCharacter(req: AuthRequest, res: Response) {
     const body = req.body as {
       nameEs?: string;
       nameEn?: string | null;
+      level?: number;
       personality?: { ideals?: string | null; bonds?: string | null; flaws?: string | null };
     };
 
@@ -681,6 +705,15 @@ export async function updateCharacter(req: AuthRequest, res: Response) {
     if (body.nameEn !== undefined) {
       updates.push(`name_en = $${p++}`);
       values.push(body.nameEn === null || body.nameEn === '' ? null : String(body.nameEn).trim());
+    }
+    if (body.level !== undefined) {
+      const lvl = Number(body.level);
+      if (!Number.isInteger(lvl) || lvl < 1 || lvl > 20) {
+        res.status(400).json({ error: 'El nivel debe ser un número entre 1 y 20' });
+        return;
+      }
+      updates.push(`level = $${p++}`);
+      values.push(lvl);
     }
     if (body.personality) {
       const pers = body.personality;

@@ -185,7 +185,7 @@ function logout() { auth.logout(); router.push('/login'); }
   flex-shrink: 0;
   transition: background var(--ease-out), box-shadow var(--ease-out);
 }
-.campaign-card:hover .campaign-icon { background: rgba(45, 212, 191, 0.12); box-shadow: var(--arcane-glow); }
+.campaign-card:hover .campaign-icon { background: rgba(192, 84, 40, 0.12); box-shadow: var(--arcane-glow); }
 .campaign-info { flex: 1; min-width: 0; }
 .campaign-title-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.3rem; flex-wrap: wrap; }
 .campaign-name {

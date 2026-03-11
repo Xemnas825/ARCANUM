@@ -51,7 +51,7 @@ const toasts = useToastStore();
   line-height: 1;
   padding: 0;
 }
-.toast-success { border-color: rgba(52, 211, 153, 0.35); }
-.toast-error { border-color: rgba(248, 113, 113, 0.38); }
+.toast-success { border-color: rgba(90, 144, 96, 0.35); }
+.toast-error { border-color: rgba(216, 64, 64, 0.38); }
 .toast-info { border-color: var(--border-arcane); }
 </style>

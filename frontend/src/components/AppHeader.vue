@@ -29,25 +29,27 @@ onUnmounted(() => {
   if (notifPollTimer) clearInterval(notifPollTimer);
 });
 
-function goPersonajes() {
-  router.push('/personajes');
-}
-function goCampanas() {
-  router.push('/campanas');
-}
-
-function goHechizos() {
-  router.push('/hechizos');
-}
+function goPersonajes() { router.push('/personajes'); }
+function goCampanas()   { router.push('/campanas'); }
+function goHechizos()   { router.push('/hechizos'); }
+function goPerfil()     { router.push('/perfil'); }
 
 const isPersonajes = () => route.path.startsWith('/personajes');
-const isCampanas = () => route.path.startsWith('/campanas');
-const isHechizos = () => route.path.startsWith('/hechizos');
+const isCampanas   = () => route.path.startsWith('/campanas');
+const isHechizos   = () => route.path.startsWith('/hechizos');
+const isPerfil     = () => route.path.startsWith('/perfil');
+
+const showUserMenu = ref(false);
 
 function openNotification(notificationId: string, campaignId?: string) {
   notifications.markRead(notificationId);
   showNotifications.value = false;
   if (campaignId) router.push(`/campanas/${campaignId}`);
+}
+
+function logout() {
+  auth.logout();
+  router.push('/login');
 }
 </script>
 
@@ -101,7 +103,7 @@ function openNotification(notificationId: string, campaignId?: string) {
           type="button"
           class="notif-btn"
           :aria-label="`Notificaciones (${notifications.unreadCount} sin leer)`"
-          @click="showNotifications = !showNotifications"
+          @click="showNotifications = !showNotifications; showUserMenu = false"
         >
           🔔
           <span v-if="notifications.unreadCount > 0" class="notif-count">{{ notifications.unreadCount }}</span>
@@ -132,6 +134,36 @@ function openNotification(notificationId: string, campaignId?: string) {
           <p v-else class="notif-empty">Sin notificaciones</p>
         </div>
       </div>
+
+      <!-- Avatar / menú de usuario -->
+      <div v-if="auth.isLoggedIn" class="user-wrap">
+        <button
+          type="button"
+          class="user-btn"
+          :class="{ active: isPerfil() }"
+          @click="showUserMenu = !showUserMenu; showNotifications = false"
+          :aria-label="`Menú de ${auth.user?.username}`"
+        >
+          <span class="user-avatar">{{ auth.user?.username?.charAt(0).toUpperCase() }}</span>
+          <span class="user-role-dot" :class="auth.user?.role"></span>
+        </button>
+        <div v-if="showUserMenu" class="user-menu dark-card">
+          <div class="user-menu-header">
+            <strong class="um-name">{{ auth.user?.username }}</strong>
+            <span class="um-role-badge" :class="auth.user?.role">
+              {{ auth.user?.role === 'dm' ? '📖 Dungeon Master' : '⚔️ Jugador' }}
+            </span>
+          </div>
+          <hr class="runic-separator" style="margin:0.4rem 0" />
+          <button type="button" class="um-item" @click="goPerfil(); showUserMenu = false">
+            ⚙ Perfil y ajustes
+          </button>
+          <button type="button" class="um-item um-logout" @click="logout">
+            ↪ Cerrar sesión
+          </button>
+        </div>
+      </div>
+
       <slot name="actions" />
     </div>
   </header>
@@ -217,8 +249,8 @@ function openNotification(notificationId: string, campaignId?: string) {
 }
 .nav-link.active {
   color: var(--arcane);
-  background: rgba(45, 212, 191, 0.1);
-  border-color: rgba(45, 212, 191, 0.2);
+  background: rgba(192, 84, 40, 0.1);
+  border-color: rgba(192, 84, 40, 0.2);
 }
 .campaign-select {
   padding: 0.4rem 0.6rem;
@@ -330,4 +362,84 @@ function openNotification(notificationId: string, campaignId?: string) {
   margin: 0.4rem 0;
   font-size: 0.86rem;
 }
+
+/* ——— Menú de usuario ——— */
+.user-wrap { position: relative; }
+
+.user-btn {
+  position: relative;
+  width: 2.1rem; height: 2.1rem;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color var(--ease-quick), box-shadow var(--ease-quick);
+}
+.user-btn:hover, .user-btn.active {
+  border-color: var(--border-arcane);
+  box-shadow: var(--arcane-glow);
+}
+.user-avatar {
+  font-family: var(--font-title);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--arcane);
+}
+.user-role-dot {
+  position: absolute;
+  bottom: 1px; right: 1px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--bg-elevated);
+  background: var(--arcane);
+}
+.user-role-dot.dm { background: var(--gold-bright); }
+.user-role-dot.player { background: var(--arcane); }
+
+.user-menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  width: 210px;
+  padding: 0.65rem;
+  z-index: 20;
+  border-radius: 8px;
+}
+.user-menu-header { padding: 0.2rem 0.4rem 0.4rem; }
+.um-name { display: block; font-family: var(--font-data); font-size: 0.88rem; font-weight: 600; color: var(--text-primary); }
+.um-role-badge {
+  display: inline-block;
+  margin-top: 0.25rem;
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.14rem 0.5rem;
+  border-radius: 99px;
+  background: var(--arcane-dim);
+  color: var(--arcane);
+  border: 1px solid var(--border-arcane);
+}
+.um-role-badge.dm {
+  background: var(--gold-dim);
+  color: var(--gold-bright);
+  border-color: var(--border-gold);
+}
+.um-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  padding: 0.45rem 0.55rem;
+  font-family: var(--font-data);
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--ease-quick), color var(--ease-quick);
+}
+.um-item:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+.um-logout { color: #e86060; }
+.um-logout:hover { background: var(--danger-dim); color: var(--danger); }
 </style>

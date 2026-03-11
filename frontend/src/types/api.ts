@@ -232,6 +232,8 @@ export interface CharacterSheetDto {
   concentratingOn?: string | null;
   activeConditions?: string[];
   inventory?: { id: string; name: string; quantity: number }[];
+  /** Quién está viendo la ficha: 'owner' = jugador propietario, 'master' = DM de la campaña */
+  viewerRole?: 'owner' | 'master';
 }
 
 export interface NotificationDto {

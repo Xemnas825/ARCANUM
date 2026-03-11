@@ -15,6 +15,7 @@ const username = ref('');
 const email = ref('');
 const password = ref('');
 const passwordConfirm = ref('');
+const selectedRole = ref<'player' | 'dm'>('player');
 
 const title = computed(() => (isRegister.value ? 'Crear cuenta' : 'Iniciar sesión'));
 const submitLabel = computed(() => (isRegister.value ? 'Registrarse' : 'Entrar'));
@@ -38,7 +39,7 @@ async function submit() {
         error.value = 'Las contraseñas no coinciden';
         return;
       }
-      await auth.register(username.value.trim(), email.value.trim(), password.value);
+      await auth.register(username.value.trim(), email.value.trim(), password.value, selectedRole.value);
     } else {
       await auth.login(email.value.trim(), password.value);
     }
@@ -96,6 +97,35 @@ function toggleMode() {
             required
             :aria-required="true"
           />
+        </div>
+
+        <!-- Selector de rol — solo en registro -->
+        <div v-if="isRegister" class="field">
+          <p class="label">¿Cuál es tu rol?</p>
+          <div class="role-picker">
+            <button
+              type="button"
+              class="role-card"
+              :class="{ active: selectedRole === 'player' }"
+              @click="selectedRole = 'player'"
+              :aria-pressed="selectedRole === 'player'"
+            >
+              <span class="role-icon">⚔️</span>
+              <span class="role-name">Jugador</span>
+              <span class="role-desc">Gestiona tu personaje y participa en campañas</span>
+            </button>
+            <button
+              type="button"
+              class="role-card"
+              :class="{ active: selectedRole === 'dm' }"
+              @click="selectedRole = 'dm'"
+              :aria-pressed="selectedRole === 'dm'"
+            >
+              <span class="role-icon">📖</span>
+              <span class="role-name">Dungeon Master</span>
+              <span class="role-desc">Crea campañas, gestiona encuentros y guía la aventura</span>
+            </button>
+          </div>
         </div>
 
         <div class="field">
@@ -171,8 +201,8 @@ function toggleMode() {
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(ellipse 70% 55% at 50% 50%, rgba(167, 139, 250, 0.07) 0%, transparent 65%),
-    radial-gradient(ellipse 50% 40% at 20% 80%, rgba(45, 212, 191, 0.04) 0%, transparent 50%);
+    radial-gradient(ellipse 70% 55% at 50% 50%, rgba(123, 142, 207, 0.07) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 20% 80%, rgba(192, 84, 40, 0.04) 0%, transparent 50%);
 }
 
 /* Partículas flotantes decorativas */
@@ -183,8 +213,8 @@ function toggleMode() {
   font-size: 0.8rem;
   animation: floatParticle 9s ease-in-out infinite;
 }
-.particle.arc  { color: var(--arcane); filter: drop-shadow(0 0 4px rgba(45,212,191,0.4)); }
-.particle.gold { color: var(--magic);  filter: drop-shadow(0 0 4px rgba(167,139,250,0.4)); }
+.particle.arc  { color: var(--arcane); filter: drop-shadow(0 0 4px rgba(192, 84, 40, 0.4)); }
+.particle.gold { color: var(--magic);  filter: drop-shadow(0 0 4px rgba(123, 142, 207, 0.4)); }
 .p1 { left: 10%; top: 20%; animation-delay: 0s;   opacity: 0.22; }
 .p2 { left: 85%; top: 15%; animation-delay: 1.5s; opacity: 0.16; font-size: 1.1rem; }
 .p3 { left: 70%; top: 75%; animation-delay: 3s;   opacity: 0.20; }
@@ -269,6 +299,49 @@ function toggleMode() {
 .hint { font-family: var(--font-data); font-size: 0.78rem; color: var(--text-faint); }
 .hint-error { color: var(--danger); }
 
+/* ——— Selector de rol ——— */
+.role-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 0.2rem;
+}
+.role-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.22rem;
+  padding: 0.75rem 0.85rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 7px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--ease-quick), background var(--ease-quick), box-shadow var(--ease-quick);
+}
+.role-card:hover {
+  border-color: var(--border-arcane);
+  background: var(--bg-card-hover);
+}
+.role-card.active {
+  border-color: var(--arcane);
+  background: var(--arcane-dim);
+  box-shadow: var(--arcane-glow);
+}
+.role-icon { font-size: 1.3rem; line-height: 1; }
+.role-name {
+  font-family: var(--font-data);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.role-desc {
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
 /* Botón de envío */
 .submit-btn {
   width: 100%;
@@ -282,7 +355,7 @@ function toggleMode() {
 }
 .btn-spinner {
   width: 14px; height: 14px;
-  border: 2px solid rgba(45, 212, 191, 0.2);
+  border: 2px solid rgba(192, 84, 40, 0.2);
   border-top-color: var(--gold);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;

@@ -346,7 +346,7 @@ function togglePrepared(id: string) {
   padding: 1rem 1.25rem;
   background: var(--danger-dim);
   border-radius: 8px;
-  border: 1px solid rgba(248, 113, 113, 0.25);
+  border: 1px solid rgba(216, 64, 64, 0.25);
 }
 
 .toolbar {
@@ -410,7 +410,7 @@ function togglePrepared(id: string) {
 }
 
 .filter-chip.active {
-  background: rgba(45, 212, 191, 0.14);
+  background: rgba(192, 84, 40, 0.14);
   border-color: var(--arcane);
   color: var(--text-primary);
   box-shadow: var(--glow-arcane);
@@ -429,9 +429,9 @@ function togglePrepared(id: string) {
 }
 
 .spell-card:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 14px rgba(167, 139, 250, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 14px rgba(123, 142, 207, 0.15);
   transform: translateY(-2px);
-  border-color: rgba(167, 139, 250, 0.3);
+  border-color: rgba(123, 142, 207, 0.3);
 }
 
 .spell-card:active {

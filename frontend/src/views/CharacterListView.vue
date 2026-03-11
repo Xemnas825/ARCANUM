@@ -423,7 +423,7 @@ function raceName(id: string) { return raceNames[id] || id; }
   transition: opacity var(--ease-out);
 }
 .char-card:hover .card-accent {
-  background: linear-gradient(90deg, transparent, rgba(45,212,191,0.3), var(--arcane), rgba(45,212,191,0.3), transparent);
+  background: linear-gradient(90deg, transparent, rgba(192, 84, 40, 0.3), var(--arcane), rgba(192, 84, 40, 0.3), transparent);
 }
 
 .char-card-body {
@@ -440,14 +440,14 @@ function raceName(id: string) { return raceNames[id] || id; }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(45, 212, 191, 0.07);
+  background: rgba(192, 84, 40, 0.07);
   border: 1px solid var(--border-arcane);
   border-radius: 8px;
   flex-shrink: 0;
   transition: background var(--ease-out), box-shadow var(--ease-out);
 }
 .char-card:hover .char-icon {
-  background: rgba(45, 212, 191, 0.1);
+  background: rgba(192, 84, 40, 0.1);
   box-shadow: none;
 }
 

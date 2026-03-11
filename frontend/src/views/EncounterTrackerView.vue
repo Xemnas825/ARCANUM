@@ -905,7 +905,7 @@ function back() {
   padding: 0.06rem 0.42rem;
   font-size: 0.72rem;
   color: var(--gold-light);
-  background: rgba(45, 212, 191, 0.07);
+  background: rgba(192, 84, 40, 0.07);
 }
 .cond-remove {
   border: none;
